@@ -351,6 +351,12 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
     for (const QString &cmd : cmds) {
         process.start("/bin/bash", QStringList() << "-c" << cmd);
         process.waitForFinished();
+        if (process.exitCode() != 0) {
+            QMessageBox::critical(this, "Partition Error",
+                                  tr("Failed to run: %1\n%2")
+                                      .arg(cmd, process.readAllStandardError()));
+            return;
+        }
     }
 
     populatePartitionTable(drive);
