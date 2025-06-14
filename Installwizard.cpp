@@ -46,12 +46,12 @@ Installwizard::Installwizard(QWidget *parent) :
         this, &Installwizard::on_installButton_clicked);
 
     connect(this, &QWizard::currentIdChanged, this, [this](int id) {
-        if (id == 2) { // partition page
+        if (id == 1) { // partition page
             QString drive = ui->driveDropdown->currentText().mid(5);
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         }
-        if (id == 3) { // user setup page
+        if (id == 2) { // final install page
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
                     "GNOME", "KDE Plasma", "XFCE", "LXQt", "Cinnamon", "MATE", "i3"
@@ -72,7 +72,7 @@ Installwizard::Installwizard(QWidget *parent) :
     });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
-        if (currentId() == 2 && !text.isEmpty() && text != "No drives found")
+        if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
             populatePartitionTable(text.mid(5));
     });
 }
@@ -287,8 +287,23 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 }
 
+void Installwizard::unmountDrive(const QString &drive) {
+    QProcess process;
+    process.start("/usr/bin/lsblk",
+                  QStringList() << "-nr" << "-o" << "MOUNTPOINT" << QString("/dev/%1").arg(drive));
+    process.waitForFinished();
+    QStringList points = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
+    for (const QString &pt : points) {
+        QString trimmed = pt.trimmed();
+        if (!trimmed.isEmpty() && trimmed != "[SWAP]") {
+            QProcess::execute("sudo", {"umount", "-f", trimmed});
+        }
+    }
+}
+
 void Installwizard::prepareDrive(const QString &drive) {
     selectedDrive = drive;
+    unmountDrive(drive);
 
     InstallerWorker *worker = new InstallerWorker;
     worker->setDrive(drive);
@@ -320,7 +335,9 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
-    process.start("lsblk", QStringList() << "-o" << "NAME,SIZE,TYPE,MOUNTPOINT" << device);
+    process.start("/usr/bin/lsblk",
+                  QStringList() << "-r" << "-n" << "-o"
+                                << "NAME,SIZE,TYPE,MOUNTPOINT" << device);
     process.waitForFinished();
     QString output = process.readAllStandardOutput();
 
@@ -339,6 +356,7 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 }
 
 void Installwizard::createDefaultPartitions(const QString &drive) {
+    unmountDrive(drive);
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
     QStringList cmds = {
@@ -359,30 +377,38 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
         }
     }
 
+    // Ensure kernel sees new table
+    process.start("/bin/bash", QStringList()
+                                << "-c"
+                                << QString("sudo partprobe %1 && sudo udevadm settle")
+                                       .arg(device));
+    process.waitForFinished();
+
     populatePartitionTable(drive);
 }
 
 
 void Installwizard::mountPartitions(const QString &drive) {
     QProcess process;
-    QString rootPart = QString("/dev/%1").arg(drive + "1");
+    QString bootPart = QString("/dev/%1").arg(drive + "1");
+    QString rootPart = QString("/dev/%1").arg(drive + "2");
 
     // 1. Mount root
     process.start("/bin/bash", { "-c",
                                 QString("sudo mount %1 /mnt").arg(rootPart) });
     process.waitForFinished(-1);
 
-    // 2. Ensure /mnt/boot exists
+    // 2. Ensure /mnt/boot exists and mount boot
     process.start("/bin/bash", { "-c",
                                 "sudo mkdir -p /mnt/boot" });
     process.waitForFinished(-1);
-
-    // 3. Copy ISO & extract
+    process.start("/bin/bash", { "-c",
+                                QString("sudo mount %1 /mnt/boot").arg(bootPart) });
+    process.waitForFinished(-1);
+    // 3. Copy ISO for later installation
     process.start("/bin/bash", { "-c",
                                 "sudo cp /tmp/archlinux.iso /mnt/archlinux.iso" });
     process.waitForFinished(-1);
-
-    mountISO();  // unchanged
 }
 
 void Installwizard::mountISO() {
@@ -686,6 +712,9 @@ void Installwizard::on_installButton_clicked() {
         QMessageBox::warning(this, "Password Mismatch", "Root passwords do not match.");
         return;
     }
+
+    // Install base system before configuring users
+    mountISO();
 
     // Add user and set password
     ui->logWidget->appendPlainText("Adding user and setting password...");
