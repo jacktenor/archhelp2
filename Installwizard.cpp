@@ -51,7 +51,8 @@ Installwizard::Installwizard(QWidget *parent) :
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         }
-        if (id == 2) { // final install page
+         if (id == 2) { // final install page
+
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
                     "GNOME", "KDE Plasma", "XFCE", "LXQt", "Cinnamon", "MATE", "i3"
@@ -405,7 +406,7 @@ void Installwizard::mountPartitions(const QString &drive) {
     process.start("/bin/bash", { "-c",
                                 QString("sudo mount %1 /mnt/boot").arg(bootPart) });
     process.waitForFinished(-1);
-    // 3. Copy ISO for later installation
+
     process.start("/bin/bash", { "-c",
                                 "sudo cp /tmp/archlinux.iso /mnt/archlinux.iso" });
     process.waitForFinished(-1);

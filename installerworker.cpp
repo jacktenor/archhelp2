@@ -38,6 +38,9 @@ void InstallerWorker::run() {
         QString("sudo parted /dev/%1 --script mkpart ESP fat32 1MiB 513MiB").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script set 1 esp on").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script mkpart primary ext4 513MiB 100%").arg(selectedDrive)
+
+        QString("sudo parted /dev/%1 --script mkpart primary ext4 513MiB 100%%").arg(selectedDrive)
+
     };
     for (const QString &cmd : cmds) {
         process.start("/bin/bash", {"-c", cmd});
