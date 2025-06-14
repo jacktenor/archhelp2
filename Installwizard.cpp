@@ -289,8 +289,23 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 }
 
+void Installwizard::unmountDrive(const QString &drive) {
+    QProcess process;
+    process.start("/usr/bin/lsblk",
+                  QStringList() << "-nr" << "-o" << "MOUNTPOINT" << QString("/dev/%1").arg(drive));
+    process.waitForFinished();
+    QStringList points = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
+    for (const QString &pt : points) {
+        QString trimmed = pt.trimmed();
+        if (!trimmed.isEmpty() && trimmed != "[SWAP]") {
+            QProcess::execute("sudo", {"umount", "-f", trimmed});
+        }
+    }
+}
+
 void Installwizard::prepareDrive(const QString &drive) {
     selectedDrive = drive;
+    unmountDrive(drive);
 
     InstallerWorker *worker = new InstallerWorker;
     worker->setDrive(drive);
@@ -322,7 +337,9 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
-    process.start("lsblk", QStringList() << "-o" << "NAME,SIZE,TYPE,MOUNTPOINT" << device);
+    process.start("/usr/bin/lsblk",
+                  QStringList() << "-r" << "-n" << "-o"
+                                << "NAME,SIZE,TYPE,MOUNTPOINT" << device);
     process.waitForFinished();
     QString output = process.readAllStandardOutput();
 
@@ -341,6 +358,7 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 }
 
 void Installwizard::createDefaultPartitions(const QString &drive) {
+    unmountDrive(drive);
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
     QStringList cmds = {
@@ -389,7 +407,7 @@ void Installwizard::mountPartitions(const QString &drive) {
     process.start("/bin/bash", { "-c",
                                 QString("sudo mount %1 /mnt/boot").arg(bootPart) });
     process.waitForFinished(-1);
-  
+
     process.start("/bin/bash", { "-c",
                                 "sudo cp /tmp/archlinux.iso /mnt/archlinux.iso" });
     process.waitForFinished(-1);

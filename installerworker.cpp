@@ -22,6 +22,14 @@ void InstallerWorker::run() {
     process.waitForFinished();
     process.start("sudo", {"umount", "-l", "/mnt"});
     process.waitForFinished();
+    process.start("/bin/bash", {"-c",
+                                QString("lsblk -nr -o MOUNTPOINT /dev/%1").arg(selectedDrive)});
+    process.waitForFinished();
+    QStringList mps = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
+    for (const QString &mp : mps) {
+        process.start("sudo", {"umount", "-f", mp.trimmed()});
+        process.waitForFinished();
+    }
 
     // Partition
     emit logMessage("Creating new partition table...");
