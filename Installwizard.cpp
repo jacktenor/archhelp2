@@ -51,8 +51,7 @@ Installwizard::Installwizard(QWidget *parent) :
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         }
-
-        if (id == 2) { // user setup page
+         if (id == 2) { // final install page
 
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
@@ -365,7 +364,7 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
         QString("sudo parted %1 --script mklabel gpt").arg(device),
         QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
         QString("sudo parted %1 --script set 1 esp on").arg(device),
-        QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%%").arg(device)
+        QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%").arg(device)
     };
 
     for (const QString &cmd : cmds) {
