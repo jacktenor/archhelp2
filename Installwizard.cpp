@@ -52,6 +52,7 @@ Installwizard::Installwizard(QWidget *parent) :
                 populatePartitionTable(drive);
         }
         if (id == 2) { // final install page
+
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
                     "GNOME", "KDE Plasma", "XFCE", "LXQt", "Cinnamon", "MATE", "i3"
@@ -362,6 +363,11 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
     QStringList cmds = {
         QString("sudo parted %1 --script mklabel msdos").arg(device),
         QString("sudo parted %1 --script mkpart primary ext4 1MiB 100%").arg(device)
+
+        QString("sudo parted %1 --script mklabel gpt").arg(device),
+        QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
+        QString("sudo parted %1 --script set 1 esp on").arg(device),
+        QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%").arg(device)
     };
 
     for (const QString &cmd : cmds) {
@@ -388,21 +394,29 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
 
 void Installwizard::mountPartitions(const QString &drive) {
     QProcess process;
-    QString rootPart = QString("/dev/%1").arg(drive + "1");
+    QString bootPart = QString("/dev/%1").arg(drive + "1");
+    QString rootPart = QString("/dev/%1").arg(drive + "2");
 
     // 1. Mount root
     process.start("/bin/bash", { "-c",
                                 QString("sudo mount %1 /mnt").arg(rootPart) });
     process.waitForFinished(-1);
 
-    // 2. Ensure /mnt/boot exists
+    // 2. Ensure /mnt/boot exists and mount boot
     process.start("/bin/bash", { "-c",
                                 "sudo mkdir -p /mnt/boot" });
     process.waitForFinished(-1);
     // 3. Copy ISO for later installation
+
+    process.start("/bin/bash", { "-c",
+                                QString("sudo mount %1 /mnt/boot").arg(bootPart) });
+    process.waitForFinished(-1);
+
+
     process.start("/bin/bash", { "-c",
                                 "sudo cp /tmp/archlinux.iso /mnt/archlinux.iso" });
     process.waitForFinished(-1);
+
 }
 
 void Installwizard::mountISO() {
