@@ -37,6 +37,7 @@ void InstallerWorker::run() {
         QString("sudo parted /dev/%1 --script mklabel msdos").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script mkpart primary ext4 1MiB 100%").arg(selectedDrive)
 
+
         QString("sudo parted /dev/%1 --script mklabel gpt").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script mkpart ESP fat32 1MiB 513MiB").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script set 1 esp on").arg(selectedDrive),
@@ -90,8 +91,10 @@ void InstallerWorker::run() {
     process.start("sudo", {"mkdir", "-p", "/mnt/boot"});
     process.waitForFinished();
 
+
     process.start("sudo", {"mount", bootPart, "/mnt/boot"});
     process.waitForFinished();
+
 
     emit logMessage("✅ Drive is ready.");
     emit installComplete();

@@ -363,6 +363,7 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
     QStringList cmds = {
         QString("sudo parted %1 --script mklabel msdos").arg(device),
         QString("sudo parted %1 --script mkpart primary ext4 1MiB 100%").arg(device)
+
         QString("sudo parted %1 --script mklabel gpt").arg(device),
         QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
         QString("sudo parted %1 --script set 1 esp on").arg(device),
@@ -411,9 +412,11 @@ void Installwizard::mountPartitions(const QString &drive) {
                                 QString("sudo mount %1 /mnt/boot").arg(bootPart) });
     process.waitForFinished(-1);
 
+
     process.start("/bin/bash", { "-c",
                                 "sudo cp /tmp/archlinux.iso /mnt/archlinux.iso" });
     process.waitForFinished(-1);
+
 }
 
 void Installwizard::mountISO() {
