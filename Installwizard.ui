@@ -87,8 +87,8 @@
    <widget class="QLabel" name="driveLabel">
     <property name="geometry">
      <rect>
-      <x>32</x>
-      <y>46</y>
+      <x>31</x>
+      <y>56</y>
       <width>420</width>
       <height>20</height>
      </rect>
@@ -101,9 +101,9 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>72</y>
+      <y>85</y>
       <width>420</width>
-      <height>200</height>
+      <height>171</height>
      </rect>
     </property>
     <property name="minimumSize">
@@ -136,9 +136,9 @@
    <widget class="QPushButton" name="partRefreshButton">
     <property name="geometry">
      <rect>
-      <x>228</x>
+      <x>236</x>
       <y>276</y>
-      <width>79</width>
+      <width>75</width>
       <height>30</height>
      </rect>
     </property>
@@ -149,9 +149,9 @@
    <widget class="QPushButton" name="createPartButton">
     <property name="geometry">
      <rect>
-      <x>314</x>
-      <y>276</y>
-      <width>165</width>
+      <x>316</x>
+      <y>275</y>
+      <width>161</width>
       <height>30</height>
      </rect>
     </property>
@@ -159,94 +159,71 @@
      <string>Create Default Partitions</string>
     </property>
    </widget>
-    <widget class="QLabel" name="label_5">
-     <property name="geometry">
-      <rect>
-       <x>190</x>
-       <y>8</y>
-       <width>99</width>
-       <height>25</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">font: 600 12pt &quot;Noto Sans&quot;;</string>
-     </property>
-     <property name="text">
-      <string>Partitioning</string>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_2">
-     <property name="geometry">
-      <rect>
-       <x>116</x>
-       <y>40</y>
-       <width>251</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">font: 600 12pt &quot;Noto Sans&quot;;</string>
-     </property>
-     <property name="text">
-      <string>Select a drive for installation</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignmentFlag::AlignCenter</set>
-     </property>
-    </widget>
-    <widget class="QComboBox" name="driveDropdown">
-     <property name="geometry">
-      <rect>
-       <x>176</x>
-       <y>132</y>
-       <width>125</width>
-       <height>30</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="refreshButton">
-     <property name="geometry">
-      <rect>
-       <x>112</x>
-       <y>88</y>
-       <width>125</width>
-       <height>30</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Refresh</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="prepareButton">
-     <property name="geometry">
-      <rect>
-       <x>242</x>
-       <y>88</y>
-       <width>125</width>
-       <height>30</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Prepare Drive</string>
-     </property>
-    </widget>
-    <widget class="QPlainTextEdit" name="logWidget">
-     <property name="geometry">
-      <rect>
-       <x>88</x>
-       <y>190</y>
-       <width>300</width>
-       <height>125</height>
-      </rect>
-     </property>
-    </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>8</y>
+      <width>99</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 600 12pt &quot;Noto Sans&quot;;</string>
+    </property>
+    <property name="text">
+     <string>Partitioning</string>
+    </property>
    </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>114</x>
+      <y>40</y>
+      <width>251</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 600 12pt &quot;Noto Sans&quot;;</string>
+    </property>
+    <property name="text">
+     <string>Select a drive for installation</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="driveDropdown">
+    <property name="geometry">
+     <rect>
+      <x>2</x>
+      <y>276</y>
+      <width>135</width>
+      <height>30</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="prepareButton">
+    <property name="geometry">
+     <rect>
+      <x>142</x>
+      <y>275</y>
+      <width>89</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Prepare Drive</string>
+    </property>
+   </widget>
+  </widget>
   <widget class="QWizardPage" name="wizardPage_3">
    <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
       <x>44</x>
-      <y>34</y>
+      <y>20</y>
       <width>221</width>
       <height>29</height>
      </rect>
@@ -272,7 +249,7 @@
     <property name="geometry">
      <rect>
       <x>286</x>
-      <y>34</y>
+      <y>20</y>
       <width>141</width>
       <height>31</height>
      </rect>
@@ -305,7 +282,7 @@
     <property name="geometry">
      <rect>
       <x>48</x>
-      <y>74</y>
+      <y>60</y>
       <width>91</width>
       <height>139</height>
      </rect>
@@ -352,7 +329,7 @@
     <property name="geometry">
      <rect>
       <x>146</x>
-      <y>74</y>
+      <y>60</y>
       <width>107</width>
       <height>139</height>
      </rect>
@@ -382,7 +359,7 @@
     <property name="geometry">
      <rect>
       <x>202</x>
-      <y>220</y>
+      <y>206</y>
       <width>82</width>
       <height>29</height>
      </rect>
@@ -401,7 +378,7 @@
     <property name="geometry">
      <rect>
       <x>296</x>
-      <y>74</y>
+      <y>60</y>
       <width>119</width>
       <height>137</height>
      </rect>
@@ -416,14 +393,14 @@
     <property name="geometry">
      <rect>
       <x>128</x>
-      <y>256</y>
+      <y>241</y>
       <width>229</width>
-      <height>72</height>
+      <height>71</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_5">
      <item>
-      <widget class="QPlainTextEdit" name="logWidget_2"/>
+      <widget class="QPlainTextEdit" name="logWidget"/>
      </item>
     </layout>
    </widget>

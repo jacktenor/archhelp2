@@ -21,7 +21,7 @@ Installwizard::Installwizard(QWidget *parent) :
 
 
     // Connect refreshButton to populate drives
-    connect(ui->refreshButton, &QPushButton::clicked, this, &Installwizard::populateDrives);
+    connect(ui->partRefreshButton, &QPushButton::clicked, this, &Installwizard::populateDrives);
 
     // Connect prepareButton to handle drive preparation
     connect(ui->prepareButton, &QPushButton::clicked, this, [=]() {
@@ -364,10 +364,10 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
         QString("sudo parted %1 --script mklabel msdos").arg(device),
         QString("sudo parted %1 --script mkpart primary ext4 1MiB 100%").arg(device)
 
-        QString("sudo parted %1 --script mklabel gpt").arg(device),
-        QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
-        QString("sudo parted %1 --script set 1 esp on").arg(device),
-        QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%").arg(device)
+        //QString("sudo parted %1 --script mklabel gpt").arg(device),
+        //QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
+        //QString("sudo parted %1 --script set 1 esp on").arg(device),
+        //QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%").arg(device)
     };
 
     for (const QString &cmd : cmds) {
