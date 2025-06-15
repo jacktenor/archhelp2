@@ -34,6 +34,9 @@ void InstallerWorker::run() {
     // Partition
     emit logMessage("Creating new partition table...");
     QStringList cmds = {
+        QString("sudo parted /dev/%1 --script mklabel msdos").arg(selectedDrive),
+        QString("sudo parted /dev/%1 --script mkpart primary ext4 1MiB 100%").arg(selectedDrive)
+
         QString("sudo parted /dev/%1 --script mklabel gpt").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script mkpart ESP fat32 1MiB 513MiB").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script set 1 esp on").arg(selectedDrive),
@@ -72,7 +75,7 @@ void InstallerWorker::run() {
 
     emit logMessage("Formatting partition " + rootPart + " as ext4...");
     process.start("/bin/bash", {
-        "-c", QString("sudo mkfs.ext4 -F -L ROOT %1").arg(rootPart)
+        "-c", QString("sudo mkfs.ext4 -F %1").arg(rootPart)
     });
     process.waitForFinished();
     if (process.exitCode() != 0) {
@@ -86,6 +89,7 @@ void InstallerWorker::run() {
     process.waitForFinished();
     process.start("sudo", {"mkdir", "-p", "/mnt/boot"});
     process.waitForFinished();
+
     process.start("sudo", {"mount", bootPart, "/mnt/boot"});
     process.waitForFinished();
 

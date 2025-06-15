@@ -51,7 +51,7 @@ Installwizard::Installwizard(QWidget *parent) :
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         }
-         if (id == 2) { // final install page
+        if (id == 2) { // final install page
 
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
@@ -361,6 +361,8 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
     QStringList cmds = {
+        QString("sudo parted %1 --script mklabel msdos").arg(device),
+        QString("sudo parted %1 --script mkpart primary ext4 1MiB 100%").arg(device)
         QString("sudo parted %1 --script mklabel gpt").arg(device),
         QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
         QString("sudo parted %1 --script set 1 esp on").arg(device),
@@ -403,6 +405,8 @@ void Installwizard::mountPartitions(const QString &drive) {
     process.start("/bin/bash", { "-c",
                                 "sudo mkdir -p /mnt/boot" });
     process.waitForFinished(-1);
+    // 3. Copy ISO for later installation
+
     process.start("/bin/bash", { "-c",
                                 QString("sudo mount %1 /mnt/boot").arg(bootPart) });
     process.waitForFinished(-1);
