@@ -549,13 +549,23 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
 
     // Install base, kernel, firmware
     ui->logWidget->appendPlainText("Installing base, linux, linux-firmware…");
-    int baseRet = QProcess::execute("sudo", {
-                                                "arch-chroot", "/mnt",
-                                                "pacman", "-Sy", "--noconfirm",
-                                                "base", "linux", "linux-firmware", "--needed"
-                                            });
-    if (baseRet != 0) {
-        QMessageBox::critical(this, "Error", "Failed to install base system.");
+
+    QProcess baseProc;
+    baseProc.setProcessChannelMode(QProcess::MergedChannels);
+    baseProc.start("sudo",
+                   {"arch-chroot", "/mnt", "pacman", "-Sy", "--noconfirm", "base", "linux",
+                    "linux-firmware", "--needed"});
+    baseProc.waitForFinished(-1);
+
+    QString baseOut = baseProc.readAllStandardOutput();
+    if (!baseOut.isEmpty()) {
+        ui->logWidget->appendPlainText(baseOut);
+    }
+
+    if (baseProc.exitCode() != 0) {
+        QMessageBox::critical(this, "Error",
+                              QString("Failed to install base system.\n%1")
+                                  .arg(QString(baseOut).trimmed()));
         return;
     }
 
