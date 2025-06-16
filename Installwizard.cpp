@@ -361,13 +361,10 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
     QStringList cmds = {
-        QString("sudo parted %1 --script mklabel msdos").arg(device),
-        QString("sudo parted %1 --script mkpart primary ext4 1MiB 100%").arg(device)
-
-        //QString("sudo parted %1 --script mklabel gpt").arg(device),
-        //QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
-        //QString("sudo parted %1 --script set 1 esp on").arg(device),
-        //QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%").arg(device)
+        QString("sudo parted %1 --script mklabel gpt").arg(device),
+        QString("sudo parted %1 --script mkpart ESP fat32 1MiB 513MiB").arg(device),
+        QString("sudo parted %1 --script set 1 esp on").arg(device),
+        QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%").arg(device)
     };
 
     for (const QString &cmd : cmds) {
