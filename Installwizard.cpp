@@ -413,7 +413,6 @@ void Installwizard::mountPartitions(const QString &drive) {
     process.start("/bin/bash", { "-c",
                                 "sudo cp /tmp/archlinux.iso /mnt/archlinux.iso" });
     process.waitForFinished(-1);
-
 }
 
 void Installwizard::mountISO() {
