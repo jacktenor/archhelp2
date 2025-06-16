@@ -7,6 +7,8 @@
 #include <QNetworkAccessManager>
 #include <QRegularExpression>
 #include <QNetworkReply>
+#include <QFile>
+#include <QDir>
 #include <unistd.h>
 #include <QStandardPaths>
 #include <QThread>
@@ -420,7 +422,19 @@ void Installwizard::mountISO() {
 
     QString isoPath = "/mnt/archlinux.iso";
 
-    // ✅ Check if ISO exists before mounting
+    // ✅ Check if ISO exists before mounting. If not, try to copy from /tmp
+    if (!QFile::exists(isoPath)) {
+        QString tmpIso = QDir::tempPath() + "/archlinux.iso";
+        if (QFile::exists(tmpIso)) {
+            if (QProcess::execute("sudo", {"cp", tmpIso, isoPath}) != 0) {
+                QMessageBox::critical(nullptr, "Error",
+                                      "Failed to copy ISO from " + tmpIso +
+                                          " to: " + isoPath);
+                return;
+            }
+        }
+    }
+
     if (!QFile::exists(isoPath)) {
         QMessageBox::critical(nullptr, "Error", "Arch Linux ISO not found at: " + isoPath);
         return;
