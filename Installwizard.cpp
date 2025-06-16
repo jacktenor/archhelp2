@@ -510,7 +510,6 @@ void Installwizard::bindSystemDirectories() {
 }
 
 void Installwizard::installArchBase(const QString &selectedDrive) {
-    QProcess process;
 
     // Ensure /etc/resolv.conf exists in chroot
     QProcess::execute("sudo", {"rm", "-f", "/mnt/etc/resolv.conf"});
@@ -531,11 +530,6 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
         }
     }
 
-    // Mount system dirs
-    QProcess::execute("sudo", {"mount", "-t", "proc", "/proc", "/mnt/proc"});
-    QProcess::execute("sudo", {"mount", "--rbind", "/sys", "/mnt/sys"});
-    QProcess::execute("sudo", {"mount", "--rbind", "/dev", "/mnt/dev"});
-    QProcess::execute("sudo", {"mount", "--rbind", "/run", "/mnt/run"});
 
     // DNS check
     QProcess dnsTest;
@@ -557,8 +551,8 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
                     "linux-firmware", "--needed"});
     baseProc.waitForFinished(-1);
 
-    QString baseOut = baseProc.readAllStandardOutput();
-    if (!baseOut.isEmpty()) {
+    QString baseOut = QString::fromUtf8(baseProc.readAll());
+    if (!baseOut.trimmed().isEmpty()) {
         ui->logWidget->appendPlainText(baseOut);
     }
 
