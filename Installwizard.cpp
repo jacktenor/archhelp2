@@ -482,44 +482,11 @@ void Installwizard::mountISO() {
         return;
     }
 
-    QMessageBox::information(nullptr, "Success", "Arch Linux root filesystem extracted successfully!\nNext we Install keys and base system.\nThis could take a few...");
-    bindSystemDirectories();
-}
+    QMessageBox::information(
+        nullptr,
+        "Success",
+        "Arch Linux root filesystem extracted successfully!\nNext we Install keys and base system.\nThis could take a few...");
 
-void Installwizard::bindSystemDirectories() {
-    QProcess process;
-
-    // ✅ Ensure directories exist before binding
-    QDir().mkpath("/mnt/proc");
-    QDir().mkpath("/mnt/sys");
-    QDir().mkpath("/mnt/dev");
-    QDir().mkpath("/mnt/run");
-
-    QStringList bindCommands = {
-        "sudo mount --bind /proc /mnt/proc",
-        "sudo mount --bind /sys /mnt/sys",
-        "sudo mount --bind /dev /mnt/dev",
-        "sudo mount --bind /run /mnt/run"
-    };
-
-    for (const QString &cmd : bindCommands) {
-        qDebug() << "Executing Bind Command:" << cmd;
-        process.start("/bin/bash", QStringList() << "-c" << cmd);
-        process.waitForFinished();
-
-        QString output = process.readAllStandardOutput();
-        QString errors = process.readAllStandardError();
-
-        qDebug() << "Bind Command Output:" << output;
-        qDebug() << "Bind Command Errors:" << errors;
-
-        if (process.exitCode() != 0) {
-            QMessageBox::critical(nullptr, "Error", QString("Failed to bind system directories:\n%1").arg(errors));
-            return;
-        }
-    }
-
-    // QMessageBox::information(nullptr, "Success", "System directories bound successfully!");
     installArchBase(selectedDrive);
 }
 

@@ -34,7 +34,6 @@ private:
     void installArchBase(const QString &selectedDrive);
     void mountISO();
     void on_installButton_clicked();
-    void bindSystemDirectories();
     void forceUnmount(const QString &mountPoint);
     void unmountDrive(const QString &drive);
     // Declare the methods that were missing
