@@ -34,9 +34,10 @@ void InstallerWorker::run() {
     // Partition
     emit logMessage("Creating new partition table...");
     QStringList cmds = {
-        QString("sudo parted /dev/%1 --script mklabel gpt").arg(selectedDrive),
-        QString("sudo parted /dev/%1 --script mkpart ESP fat32 1MiB 513MiB").arg(selectedDrive),
-        QString("sudo parted /dev/%1 --script set 1 esp on").arg(selectedDrive),
+        // Legacy BIOS layout: 512MiB boot partition + remainder root
+        QString("sudo parted /dev/%1 --script mklabel msdos").arg(selectedDrive),
+        QString("sudo parted /dev/%1 --script mkpart primary ext4 1MiB 513MiB").arg(selectedDrive),
+        QString("sudo parted /dev/%1 --script set 1 boot on").arg(selectedDrive),
         QString("sudo parted /dev/%1 --script mkpart primary ext4 513MiB 100%").arg(selectedDrive)
     };
     for (const QString &cmd : cmds) {
@@ -57,9 +58,9 @@ void InstallerWorker::run() {
     process.waitForFinished();
 
     // Format partitions
-    emit logMessage("Formatting boot partition " + bootPart + " as FAT32...");
+    emit logMessage("Formatting boot partition " + bootPart + " as ext4...");
     process.start("/bin/bash", {
-        "-c", QString("sudo mkfs.fat -F32 %1").arg(bootPart)
+        "-c", QString("sudo mkfs.ext4 -F %1").arg(bootPart)
     });
     process.waitForFinished();
     if (process.exitCode() != 0) {
