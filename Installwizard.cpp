@@ -7,6 +7,8 @@
 #include <QNetworkAccessManager>
 #include <QRegularExpression>
 #include <QNetworkReply>
+#include <QFile>
+#include <QDir>
 #include <unistd.h>
 #include <QStandardPaths>
 #include <QThread>
@@ -421,7 +423,19 @@ void Installwizard::mountISO() {
 
     QString isoPath = "/mnt/archlinux.iso";
 
-    // ✅ Check if ISO exists before mounting
+    // ✅ Check if ISO exists before mounting. If not, try to copy from /tmp
+    if (!QFile::exists(isoPath)) {
+        QString tmpIso = QDir::tempPath() + "/archlinux.iso";
+        if (QFile::exists(tmpIso)) {
+            if (QProcess::execute("sudo", {"cp", tmpIso, isoPath}) != 0) {
+                QMessageBox::critical(nullptr, "Error",
+                                      "Failed to copy ISO from " + tmpIso +
+                                          " to: " + isoPath);
+                return;
+            }
+        }
+    }
+
     if (!QFile::exists(isoPath)) {
         QMessageBox::critical(nullptr, "Error", "Arch Linux ISO not found at: " + isoPath);
         return;
@@ -468,49 +482,15 @@ void Installwizard::mountISO() {
         return;
     }
 
-    QMessageBox::information(nullptr, "Success", "Arch Linux root filesystem extracted successfully!\nNext we Install keys and base system.\nThis could take a few...");
-    bindSystemDirectories();
-}
+    QMessageBox::information(
+        nullptr,
+        "Success",
+        "Arch Linux root filesystem extracted successfully!\nNext we Install keys and base system.\nThis could take a few...");
 
-void Installwizard::bindSystemDirectories() {
-    QProcess process;
-
-    // ✅ Ensure directories exist before binding
-    QDir().mkpath("/mnt/proc");
-    QDir().mkpath("/mnt/sys");
-    QDir().mkpath("/mnt/dev");
-    QDir().mkpath("/mnt/run");
-
-    QStringList bindCommands = {
-        "sudo mount --bind /proc /mnt/proc",
-        "sudo mount --bind /sys /mnt/sys",
-        "sudo mount --bind /dev /mnt/dev",
-        "sudo mount --bind /run /mnt/run"
-    };
-
-    for (const QString &cmd : bindCommands) {
-        qDebug() << "Executing Bind Command:" << cmd;
-        process.start("/bin/bash", QStringList() << "-c" << cmd);
-        process.waitForFinished();
-
-        QString output = process.readAllStandardOutput();
-        QString errors = process.readAllStandardError();
-
-        qDebug() << "Bind Command Output:" << output;
-        qDebug() << "Bind Command Errors:" << errors;
-
-        if (process.exitCode() != 0) {
-            QMessageBox::critical(nullptr, "Error", QString("Failed to bind system directories:\n%1").arg(errors));
-            return;
-        }
-    }
-
-    // QMessageBox::information(nullptr, "Success", "System directories bound successfully!");
     installArchBase(selectedDrive);
 }
 
 void Installwizard::installArchBase(const QString &selectedDrive) {
-    QProcess process;
 
     // Ensure /etc/resolv.conf exists in chroot
     QProcess::execute("sudo", {"rm", "-f", "/mnt/etc/resolv.conf"});
@@ -531,11 +511,6 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
         }
     }
 
-    // Mount system dirs
-    QProcess::execute("sudo", {"mount", "-t", "proc", "/proc", "/mnt/proc"});
-    QProcess::execute("sudo", {"mount", "--rbind", "/sys", "/mnt/sys"});
-    QProcess::execute("sudo", {"mount", "--rbind", "/dev", "/mnt/dev"});
-    QProcess::execute("sudo", {"mount", "--rbind", "/run", "/mnt/run"});
 
     // DNS check
     QProcess dnsTest;
@@ -549,13 +524,23 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
 
     // Install base, kernel, firmware
     ui->logWidget->appendPlainText("Installing base, linux, linux-firmware…");
-    int baseRet = QProcess::execute("sudo", {
-                                                "arch-chroot", "/mnt",
-                                                "pacman", "-Sy", "--noconfirm",
-                                                "base", "linux", "linux-firmware", "--needed"
-                                            });
-    if (baseRet != 0) {
-        QMessageBox::critical(this, "Error", "Failed to install base system.");
+
+    QProcess baseProc;
+    baseProc.setProcessChannelMode(QProcess::MergedChannels);
+    baseProc.start("sudo",
+                   {"arch-chroot", "/mnt", "pacman", "-Sy", "--noconfirm", "base", "linux",
+                    "linux-firmware", "--needed"});
+    baseProc.waitForFinished(-1);
+
+    QString baseOut = QString::fromUtf8(baseProc.readAll());
+    if (!baseOut.trimmed().isEmpty()) {
+        ui->logWidget->appendPlainText(baseOut);
+    }
+
+    if (baseProc.exitCode() != 0) {
+        QMessageBox::critical(this, "Error",
+                              QString("Failed to install base system.\n%1")
+                                  .arg(QString(baseOut).trimmed()));
         return;
     }
 
