@@ -42,9 +42,13 @@ void InstallerWorker::run() {
     };
     for (const QString &cmd : cmds) {
         process.start("/bin/bash", {"-c", cmd});
-        process.waitForFinished();
+        process.waitForFinished(-1);
+        QString stdOut = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+        QString errOut = QString::fromUtf8(process.readAllStandardError()).trimmed();
+        if (!stdOut.isEmpty())
+            emit logMessage(stdOut);
         if (process.exitCode() != 0) {
-            emit errorOccurred("Partition error: " + cmd);
+            emit errorOccurred(QString("Partition error: %1\n%2").arg(cmd, errOut));
             return;
         }
     }
