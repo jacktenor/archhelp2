@@ -304,6 +304,15 @@ void Installwizard::unmountDrive(const QString &drive) {
     }
 }
 
+void Installwizard::appendLog(const QString &message) {
+    if (ui->logWidget)
+        ui->logWidget->appendPlainText(message);
+    if (ui->logView2)
+        ui->logView2->appendPlainText(message);
+    if (ui->logView3)
+        ui->logView3->appendPlainText(message);
+}
+
 void Installwizard::prepareDrive(const QString &drive) {
     selectedDrive = drive;
     unmountDrive(drive);
@@ -315,7 +324,7 @@ void Installwizard::prepareDrive(const QString &drive) {
     worker->moveToThread(thread);
 
     connect(thread, &QThread::started, worker, &InstallerWorker::run);
-    connect(worker, &InstallerWorker::logMessage, ui->logWidget, &QPlainTextEdit::appendPlainText);
+    connect(worker, &InstallerWorker::logMessage, this, [this](const QString &msg) { appendLog(msg); });
     connect(worker, &InstallerWorker::errorOccurred, this, [this](const QString &msg) {
         QMessageBox::critical(this, "Error", msg);
     });
@@ -524,7 +533,7 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
     QProcess::execute("sudo", {"arch-chroot", "/mnt", "pacman", "-Sy", "--noconfirm", "archlinux-keyring"});
 
     // Install base, kernel, firmware
-    ui->logWidget->appendPlainText("Installing base, linux, linux-firmware…");
+    appendLog("Installing base, linux, linux-firmware…");
 
     QProcess baseProc;
     baseProc.setProcessChannelMode(QProcess::MergedChannels);
@@ -535,7 +544,7 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
 
     QString baseOut = QString::fromUtf8(baseProc.readAll());
     if (!baseOut.trimmed().isEmpty()) {
-        ui->logWidget->appendPlainText(baseOut);
+        appendLog(baseOut);
     }
 
     if (baseProc.exitCode() != 0) {
@@ -580,7 +589,7 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
                                   "arch-chroot", "/mnt",
                                   "rm", "-f", "/boot/initramfs-linux*"
                               });
-    ui->logWidget->appendPlainText("Regenerating /etc/fstab cleanly…");
+    appendLog("Regenerating /etc/fstab cleanly…");
 
     int fstabRet = QProcess::execute("sudo", {
                                                  "arch-chroot", "/mnt",
@@ -616,7 +625,7 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
 void Installwizard::installGrub(const QString &drive) {
     QString disk = QString("/dev/%1").arg(drive);
 
-    ui->logWidget->appendPlainText("Installing GRUB to target disk from inside chroot…");
+    appendLog("Installing GRUB to target disk from inside chroot…");
 
     // Install GRUB package into target
     int pkgRet = QProcess::execute("sudo", {
@@ -661,7 +670,7 @@ void Installwizard::installGrub(const QString &drive) {
         return;
     }
 
-    ui->logWidget->appendPlainText("Updating...");
+    appendLog("Updating...");
     int update = QProcess::execute("sudo", {
                                                 "arch-chroot", "/mnt",
                                                 "pacman", "-Syu", "--noconfirm"
@@ -708,7 +717,7 @@ void Installwizard::on_installButton_clicked() {
     mountISO();
 
     // Add user and set password
-    ui->logWidget->appendPlainText("Adding user and setting password...");
+    appendLog("Adding user and setting password...");
     QProcess::execute("sudo", {
                                   "arch-chroot", "/mnt",
                                   "useradd", "-m", "-G", "wheel", username
@@ -749,7 +758,7 @@ void Installwizard::on_installButton_clicked() {
     }
 
     // Install selected desktop packages
-    ui->logWidget->appendPlainText("Installing desktop environment: " + desktopEnv);
+    appendLog("Installing desktop environment: " + desktopEnv);
     QStringList dePkgs = {"arch-chroot", "/mnt", "pacman", "-Sy", "--noconfirm"};
     dePkgs.append(desktopPackages[desktopEnv]);
 
@@ -779,7 +788,7 @@ void Installwizard::on_installButton_clicked() {
 
 
 
-    ui->logWidget->appendPlainText("Removing and rebuilding /etc/fstab...");
+    appendLog("Removing and rebuilding /etc/fstab...");
 
     int fstabRetTwo = QProcess::execute("sudo", {
                                                  "arch-chroot", "/mnt",
@@ -792,7 +801,7 @@ void Installwizard::on_installButton_clicked() {
 
 
 
-    ui->logWidget->appendPlainText("Regenerating /etc/fstab from host…");
+    appendLog("Regenerating /etc/fstab from host…");
 
     int fstabRet = QProcess::execute("sudo", {
                                                  "bash", "-c", "genfstab -U /mnt > /mnt/etc/fstab"
@@ -801,7 +810,7 @@ void Installwizard::on_installButton_clicked() {
         QMessageBox::warning(this, "Warning", "Failed to regenerate /etc/fstab.");
     }
 
-    ui->logWidget->appendPlainText("Sanitizing /etc/fstab to remove ghost devices…");
+    appendLog("Sanitizing /etc/fstab to remove ghost devices…");
 
     int cleanRet = QProcess::execute("sudo", {
                                                  "bash", "-c",
