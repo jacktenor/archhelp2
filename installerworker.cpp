@@ -93,6 +93,9 @@ void InstallerWorker::run() {
     process.start("sudo", {"mount", bootPart, "/mnt/boot"});
     process.waitForFinished();
 
+    // Copy ISO for later installation if available
+    process.start("/bin/bash", {"-c", "if [ -f /tmp/archlinux.iso ]; then sudo cp /tmp/archlinux.iso /mnt/archlinux.iso; fi"});
+    process.waitForFinished();
 
     emit logMessage("✅ Drive is ready.");
     emit installComplete();
