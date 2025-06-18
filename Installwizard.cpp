@@ -675,7 +675,7 @@ void Installwizard::installGrub(const QString &drive) {
         QMessageBox::critical(this, "Error", "Failed to update base system.");
         return;
     }
-
+}
 
 void Installwizard::on_installButton_clicked() {
     QString username = ui->lineEditUsername->text().trimmed();
@@ -812,8 +812,14 @@ void Installwizard::on_installButton_clicked() {
 
     appendLog("Sanitizing /etc/fstab to remove ghost devices…");
 
-    QThread *thread = new QThread;
     worker->moveToThread(thread);
+
+
+    QProcess process;
+
+    process.start("/bin/bash", QStringList() << "-c" << " sudo umount -Rfl /mn/archiso");
+
+
 
     connect(thread, &QThread::started, worker, &SystemWorker::run);
     connect(worker, &SystemWorker::logMessage, this, [this](const QString &msg) { appendLog(msg); });

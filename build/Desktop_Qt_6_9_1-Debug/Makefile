@@ -280,7 +280,6 @@ DIST          = /Qt/6.9.1/gcc_64/mkspecs/features/spec_pre.prf \
 		/Qt/6.9.1/gcc_64/mkspecs/features/qt_config.prf \
 		/Qt/6.9.1/gcc_64/mkspecs/linux-g++/qmake.conf \
 		/Qt/6.9.1/gcc_64/mkspecs/features/spec_post.prf \
-		../../.qmake.stash \
 		/Qt/6.9.1/gcc_64/mkspecs/features/exclusive_builds.prf \
 		/Qt/6.9.1/gcc_64/mkspecs/features/toolchain.prf \
 		/Qt/6.9.1/gcc_64/mkspecs/features/default_pre.prf \
@@ -534,7 +533,6 @@ Makefile: ../../ArchHelp.pro ../../../../Qt/6.9.1/gcc_64/mkspecs/features/spec_p
 		../../../../Qt/6.9.1/gcc_64/mkspecs/features/qt_config.prf \
 		../../../../Qt/6.9.1/gcc_64/mkspecs/linux-g++/qmake.conf \
 		../../../../Qt/6.9.1/gcc_64/mkspecs/features/spec_post.prf \
-		.qmake.stash \
 		../../../../Qt/6.9.1/gcc_64/mkspecs/features/exclusive_builds.prf \
 		../../../../Qt/6.9.1/gcc_64/mkspecs/features/toolchain.prf \
 		../../../../Qt/6.9.1/gcc_64/mkspecs/features/default_pre.prf \
@@ -777,7 +775,6 @@ Makefile: ../../ArchHelp.pro ../../../../Qt/6.9.1/gcc_64/mkspecs/features/spec_p
 ../../../../Qt/6.9.1/gcc_64/mkspecs/features/qt_config.prf:
 ../../../../Qt/6.9.1/gcc_64/mkspecs/linux-g++/qmake.conf:
 ../../../../Qt/6.9.1/gcc_64/mkspecs/features/spec_post.prf:
-.qmake.stash:
 ../../../../Qt/6.9.1/gcc_64/mkspecs/features/exclusive_builds.prf:
 ../../../../Qt/6.9.1/gcc_64/mkspecs/features/toolchain.prf:
 ../../../../Qt/6.9.1/gcc_64/mkspecs/features/default_pre.prf:
@@ -1579,53 +1576,6 @@ Installwizard.o: ../../Installwizard.cpp ../../Installwizard.h \
 		../../installerworker.h \
 		../../systemworker.h \
 		ui_Installwizard.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QApplication \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qapplication.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QComboBox \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qcombobox.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractitemdelegate.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qstyleoption.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractspinbox.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qvalidator.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtCore/qregularexpression.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qslider.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractslider.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qstyle.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtabbar.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtabwidget.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qrubberband.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtCore/qabstractitemmodel.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QHeaderView \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qheaderview.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractitemview.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractscrollarea.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtCore/qitemselectionmodel.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QLabel \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qlabel.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qpicture.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qtextdocument.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QLineEdit \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qlineedit.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qtextcursor.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qtextformat.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qpen.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qtextoption.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QPlainTextEdit \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qplaintextedit.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtextedit.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qabstracttextdocumentlayout.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qtextlayout.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qglyphrun.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qrawfont.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtGui/qfontdatabase.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QPushButton \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qpushbutton.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractbutton.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QTreeWidget \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtreewidget.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtreeview.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtreewidgetitemiterator.h \
-		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QWizardPage \
 		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QFileDialog \
 		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qfiledialog.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/qdir.h \
@@ -1640,6 +1590,7 @@ Installwizard.o: ../../Installwizard.cpp ../../Installwizard.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/QProcess \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/qprocess.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/QRegularExpression \
+		../../../../Qt/6.9.1/gcc_64/include/QtCore/qregularexpression.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtNetwork/QNetworkReply \
 		../../../../Qt/6.9.1/gcc_64/include/QtNetwork/qnetworkreply.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/QIODevice \
@@ -1649,6 +1600,24 @@ Installwizard.o: ../../Installwizard.cpp ../../Installwizard.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/QStandardPaths \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/qstandardpaths.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtCore/QThread \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QTreeWidget \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtreewidget.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtreeview.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractitemview.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractscrollarea.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtCore/qabstractitemmodel.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtCore/qitemselectionmodel.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractitemdelegate.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qstyleoption.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractspinbox.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtGui/qvalidator.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qslider.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qabstractslider.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qstyle.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtabbar.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtabwidget.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qrubberband.h \
+		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/qtreewidgetitemiterator.h \
 		../../../../Qt/6.9.1/gcc_64/include/QtWidgets/QTreeWidgetItem
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Installwizard.o ../../Installwizard.cpp
 
