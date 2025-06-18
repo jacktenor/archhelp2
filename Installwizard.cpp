@@ -1,5 +1,6 @@
 #include "Installwizard.h"
 #include "installerworker.h"
+#include "systemworker.h"
 #include "ui_Installwizard.h"
 #include <QFileDialog>
 #include <QMessageBox>
@@ -334,9 +335,7 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
-    connect(worker, &InstallerWorker::installComplete, this, [this]() {
-        mountPartitions(selectedDrive);
-    });
+
 
     thread->start();
 }
@@ -401,7 +400,6 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
 
     populatePartitionTable(drive);
 }
-
 
 void Installwizard::mountPartitions(const QString &drive) {
     QProcess process;
@@ -714,6 +712,12 @@ void Installwizard::on_installButton_clicked() {
         return;
     }
 
+    SystemWorker *worker = new SystemWorker;
+    worker->setParameters(selectedDrive, username, password, rootPassword, desktopEnv);
+
+    QThread *thread = new QThread;
+    worker->moveToThread(thread);
+
     // Install base system before configuring users
     mountISO();
 
@@ -821,6 +825,14 @@ void Installwizard::on_installButton_clicked() {
         QMessageBox::warning(this, "Warning", "Failed to sanitize fstab.");
     }
 
+    connect(thread, &QThread::started, worker, &SystemWorker::run);
+    connect(worker, &SystemWorker::logMessage, this, [this](const QString &msg) { appendLog(msg); });
+    connect(worker, &SystemWorker::errorOccurred, this, [this](const QString &msg) {
+        QMessageBox::critical(this, "Error", msg);
+    });
+    connect(worker, &SystemWorker::finished, thread, &QThread::quit);
+    connect(worker, &SystemWorker::finished, worker, &QObject::deleteLater);
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
-    QMessageBox::information(this, "Success", "User setup and desktop environment installed successfully!\nEnjoy Arch Linux.");
+    thread->start();
 }
