@@ -97,7 +97,7 @@ void SystemWorker::run() {
     if (!runCommand("sudo arch-chroot /mnt pacman -Sy --noconfirm grub os-prober --needed"))
         return;
     runCommand("sudo arch-chroot /mnt sed -i '/2025-05-01-10-09-37-00/d' /etc/default/grub");
-    runCommand("sudo arch-chroot /mnt bash -c \"echo 'GRUB_DISABLE_LINUX_UUID="false"' >> /etc/default/grub\"");
+    runCommand("sudo arch-chroot /mnt bash -c \"echo 'GRUB_DISABLE_LINUX_UUID=false' >> /etc/default/grub\"");
     if (!runCommand(QString("sudo arch-chroot /mnt grub-install --target=i386-pc /dev/%1").arg(drive)))
         return;
     if (!runCommand("sudo arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg"))

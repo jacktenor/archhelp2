@@ -37,6 +37,10 @@ private:
     void prepareDrive(const QString &drive);   // Prepare the selected drive
     void populatePartitionTable(const QString &drive); // new
     void createDefaultPartitions(const QString &drive); // new example
+    void mountPartitions(const QString &drive);
+    void mountISO();
+    void installArchBase(const QString &selectedDrive);
+    void installGrub(const QString &drive);
 };
 
 #endif // INSTALLWIZARD_H
