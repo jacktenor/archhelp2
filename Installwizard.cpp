@@ -318,7 +318,6 @@ void Installwizard::appendLog(const QString &message) {
 
 void Installwizard::prepareDrive(const QString &drive) {
     selectedDrive = drive;
-    unmountDrive(drive);
 
     InstallerWorker *worker = new InstallerWorker;
     worker->setDrive(drive);
@@ -334,8 +333,6 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::installComplete, thread, &QThread::quit);
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-
-
 
     thread->start();
 }
@@ -679,9 +676,6 @@ void Installwizard::installGrub(const QString &drive) {
         return;
     }
 
-    QMessageBox::information(nullptr, "Success",
-                             "GRUB successfully installed and configured!");
-}
 
 void Installwizard::on_installButton_clicked() {
     QString username = ui->lineEditUsername->text().trimmed();
@@ -714,6 +708,7 @@ void Installwizard::on_installButton_clicked() {
 
     SystemWorker *worker = new SystemWorker;
     worker->setParameters(selectedDrive, username, password, rootPassword, desktopEnv);
+
 
     QThread *thread = new QThread;
     worker->moveToThread(thread);
@@ -817,13 +812,8 @@ void Installwizard::on_installButton_clicked() {
 
     appendLog("Sanitizing /etc/fstab to remove ghost devices…");
 
-    int cleanRet = QProcess::execute("sudo", {
-                                                 "bash", "-c",
-                                                 R"(awk '!/^#|^$/{print; exit} 1' /mnt/etc/fstab > /mnt/etc/fstab.clean && mv /mnt/etc/fstab.clean /mnt/etc/fstab)"
-                                             });
-    if (cleanRet != 0) {
-        QMessageBox::warning(this, "Warning", "Failed to sanitize fstab.");
-    }
+    QThread *thread = new QThread;
+    worker->moveToThread(thread);
 
     connect(thread, &QThread::started, worker, &SystemWorker::run);
     connect(worker, &SystemWorker::logMessage, this, [this](const QString &msg) { appendLog(msg); });
