@@ -123,6 +123,7 @@ void Installwizard::downloadISO(QProgressBar *progressBar) {
         delete file;
         return;
     }
+    appendLog("Downloading ISO...");
 
     connect(reply, &QNetworkReply::downloadProgress, this, [progressBar](qint64 bytesReceived, qint64 bytesTotal) {
         if (bytesTotal > 0) {
@@ -183,8 +184,9 @@ void Installwizard::installDependencies() {
     };
 
     QString installCmd = "pkexec apt install -y " + packages.join(" ");
-    
+
     qDebug() << "Installing dependencies:" << installCmd;
+    appendLog("Installing dependencies:...");
 
     process.start("/bin/bash", QStringList() << "-c" << installCmd);
     process.waitForFinished(-1);
@@ -200,7 +202,7 @@ void Installwizard::installDependencies() {
         return;
     }
 
-    // QMessageBox::information(this, "Dependencies Ready", "All required packages are installed.");
+    appendLog("Dependencies installed, click next to proceed.");
 
     getAvailableDrives();
 }
@@ -305,12 +307,12 @@ void Installwizard::unmountDrive(const QString &drive) {
 }
 
 void Installwizard::appendLog(const QString &message) {
-    if (ui->logWidget)
-        ui->logWidget->appendPlainText(message);
+    if (ui->logWidget3)
+        ui->logWidget3->appendPlainText(message);
+    if (ui->logView1)
+        ui->logView1->appendPlainText(message);
     if (ui->logView2)
         ui->logView2->appendPlainText(message);
-    if (ui->logView3)
-        ui->logView3->appendPlainText(message);
 }
 
 void Installwizard::prepareDrive(const QString &drive) {
@@ -343,7 +345,7 @@ void Installwizard::populatePartitionTable(const QString &drive) {
     if (drive.isEmpty())
         return;
 
-    ui->driveLabel->setText(tr("Drive: /dev/%1").arg(drive));
+    //ui->driveLabel->setText(tr("Drive: /dev/%1").arg(drive));
 
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);

@@ -12,7 +12,6 @@
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QComboBox>
-#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
@@ -20,8 +19,6 @@
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTreeWidget>
-#include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QWidget>
 #include <QtWidgets/QWizard>
 #include <QtWidgets/QWizardPage>
 
@@ -34,8 +31,9 @@ public:
     QLabel *label;
     QPushButton *downloadButton;
     QProgressBar *progressBar;
+    QPlainTextEdit *logView1;
+    QLabel *label_6;
     QWizardPage *partitionPage;
-    QLabel *driveLabel;
     QTreeWidget *treePartitions;
     QPushButton *partRefreshButton;
     QPushButton *createPartButton;
@@ -43,50 +41,37 @@ public:
     QLabel *label_2;
     QComboBox *driveDropdown;
     QPushButton *prepareButton;
+    QPlainTextEdit *logView2;
     QWizardPage *wizardPage_3;
-    QWidget *verticalLayoutWidget;
-    QVBoxLayout *verticalLayout;
-    QLabel *label_3;
-    QWidget *verticalLayoutWidget_2;
-    QVBoxLayout *verticalLayout_2;
+    QPushButton *installButton;
+    QPlainTextEdit *logWidget3;
+    QComboBox *comboDesktopEnvironment;
     QLabel *label_4;
-    QWidget *verticalLayoutWidget_3;
-    QVBoxLayout *verticalLayout_3;
+    QLabel *label_3;
     QLabel *labelUsername;
     QLabel *labelPassword;
     QLabel *labelAgain;
     QLabel *labelRootPassword;
     QLabel *labelRootPasswordAgain;
-    QWidget *verticalLayoutWidget_4;
-    QVBoxLayout *verticalLayout_4;
     QLineEdit *lineEditUsername;
     QLineEdit *lineEditPassword;
     QLineEdit *lineEditPasswordAgain;
     QLineEdit *lineEditRootPassword;
     QLineEdit *lineEditRootPasswordAgain;
-    QWidget *verticalLayoutWidget_5;
-    QVBoxLayout *verticalLayout_6;
-    QPushButton *installButton;
-    QWidget *horizontalLayoutWidget;
-    QHBoxLayout *horizontalLayout;
-    QComboBox *comboDesktopEnvironment;
-    QWidget *verticalLayoutWidget_6;
-    QVBoxLayout *verticalLayout_5;
-    QPlainTextEdit *logWidget;
 
     void setupUi(QWizard *Installwizard)
     {
         if (Installwizard->objectName().isEmpty())
             Installwizard->setObjectName("Installwizard");
-        Installwizard->resize(500, 375);
-        Installwizard->setMinimumSize(QSize(500, 375));
-        Installwizard->setMaximumSize(QSize(500, 375));
+        Installwizard->resize(500, 420);
+        Installwizard->setMinimumSize(QSize(500, 420));
+        Installwizard->setMaximumSize(QSize(500, 420));
         Installwizard->setWizardStyle(QWizard::WizardStyle::ClassicStyle);
         wizardPage = new QWizardPage();
         wizardPage->setObjectName("wizardPage");
         label = new QLabel(wizardPage);
         label->setObjectName("label");
-        label->setGeometry(QRect(90, 38, 301, 25));
+        label->setGeometry(QRect(90, 18, 301, 25));
         QFont font;
         font.setFamilies({QString::fromUtf8("Noto Sans")});
         font.setPointSize(12);
@@ -97,170 +82,108 @@ public:
         label->setAlignment(Qt::AlignmentFlag::AlignCenter);
         downloadButton = new QPushButton(wizardPage);
         downloadButton->setObjectName("downloadButton");
-        downloadButton->setGeometry(QRect(188, 95, 100, 30));
+        downloadButton->setGeometry(QRect(190, 100, 100, 30));
         progressBar = new QProgressBar(wizardPage);
         progressBar->setObjectName("progressBar");
-        progressBar->setGeometry(QRect(86, 155, 300, 25));
+        progressBar->setGeometry(QRect(30, 154, 420, 30));
         progressBar->setValue(0);
+        logView1 = new QPlainTextEdit(wizardPage);
+        logView1->setObjectName("logView1");
+        logView1->setGeometry(QRect(30, 192, 420, 150));
+        label_6 = new QLabel(wizardPage);
+        label_6->setObjectName("label_6");
+        label_6->setGeometry(QRect(142, 56, 207, 17));
+        label_6->setStyleSheet(QString::fromUtf8("font: 600 12pt \"Noto Sans\";"));
         Installwizard->addPage(wizardPage);
         partitionPage = new QWizardPage();
         partitionPage->setObjectName("partitionPage");
-        driveLabel = new QLabel(partitionPage);
-        driveLabel->setObjectName("driveLabel");
-        driveLabel->setGeometry(QRect(31, 56, 420, 20));
         treePartitions = new QTreeWidget(partitionPage);
         treePartitions->setObjectName("treePartitions");
-        treePartitions->setGeometry(QRect(30, 85, 421, 171));
+        treePartitions->setGeometry(QRect(32, 58, 420, 125));
         treePartitions->setMinimumSize(QSize(420, 0));
         partRefreshButton = new QPushButton(partitionPage);
         partRefreshButton->setObjectName("partRefreshButton");
-        partRefreshButton->setGeometry(QRect(236, 276, 75, 30));
+        partRefreshButton->setGeometry(QRect(230, 316, 75, 30));
         createPartButton = new QPushButton(partitionPage);
         createPartButton->setObjectName("createPartButton");
-        createPartButton->setGeometry(QRect(316, 275, 161, 30));
+        createPartButton->setGeometry(QRect(310, 316, 160, 30));
         label_5 = new QLabel(partitionPage);
         label_5->setObjectName("label_5");
-        label_5->setGeometry(QRect(190, 8, 99, 25));
+        label_5->setGeometry(QRect(192, 6, 99, 25));
         label_5->setStyleSheet(QString::fromUtf8("font: 600 12pt \"Noto Sans\";"));
         label_2 = new QLabel(partitionPage);
         label_2->setObjectName("label_2");
-        label_2->setGeometry(QRect(114, 40, 251, 22));
+        label_2->setGeometry(QRect(116, 30, 251, 22));
         label_2->setStyleSheet(QString::fromUtf8("font: 600 12pt \"Noto Sans\";"));
         label_2->setAlignment(Qt::AlignmentFlag::AlignCenter);
         driveDropdown = new QComboBox(partitionPage);
+        driveDropdown->addItem(QString());
         driveDropdown->setObjectName("driveDropdown");
-        driveDropdown->setGeometry(QRect(2, 276, 135, 30));
+        driveDropdown->setGeometry(QRect(-4, 316, 125, 30));
         prepareButton = new QPushButton(partitionPage);
         prepareButton->setObjectName("prepareButton");
-        prepareButton->setGeometry(QRect(142, 275, 89, 30));
+        prepareButton->setGeometry(QRect(126, 316, 100, 30));
+        logView2 = new QPlainTextEdit(partitionPage);
+        logView2->setObjectName("logView2");
+        logView2->setGeometry(QRect(32, 184, 420, 125));
         Installwizard->addPage(partitionPage);
         wizardPage_3 = new QWizardPage();
         wizardPage_3->setObjectName("wizardPage_3");
-        verticalLayoutWidget = new QWidget(wizardPage_3);
-        verticalLayoutWidget->setObjectName("verticalLayoutWidget");
-        verticalLayoutWidget->setGeometry(QRect(44, 20, 221, 29));
-        verticalLayout = new QVBoxLayout(verticalLayoutWidget);
-        verticalLayout->setObjectName("verticalLayout");
-        verticalLayout->setContentsMargins(0, 0, 0, 0);
-        label_3 = new QLabel(verticalLayoutWidget);
-        label_3->setObjectName("label_3");
+        installButton = new QPushButton(wizardPage_3);
+        installButton->setObjectName("installButton");
+        installButton->setGeometry(QRect(200, 172, 80, 25));
+        logWidget3 = new QPlainTextEdit(wizardPage_3);
+        logWidget3->setObjectName("logWidget3");
+        logWidget3->setGeometry(QRect(30, 210, 420, 150));
+        comboDesktopEnvironment = new QComboBox(wizardPage_3);
+        comboDesktopEnvironment->setObjectName("comboDesktopEnvironment");
+        comboDesktopEnvironment->setGeometry(QRect(308, 44, 125, 25));
+        label_4 = new QLabel(wizardPage_3);
+        label_4->setObjectName("label_4");
+        label_4->setGeometry(QRect(304, 16, 132, 21));
         QFont font1;
         font1.setFamilies({QString::fromUtf8("Noto Serif")});
         font1.setPointSize(11);
         font1.setBold(true);
-        label_3->setFont(font1);
-
-        verticalLayout->addWidget(label_3);
-
-        verticalLayoutWidget_2 = new QWidget(wizardPage_3);
-        verticalLayoutWidget_2->setObjectName("verticalLayoutWidget_2");
-        verticalLayoutWidget_2->setGeometry(QRect(286, 20, 141, 31));
-        verticalLayoutWidget_2->setFont(font1);
-        verticalLayout_2 = new QVBoxLayout(verticalLayoutWidget_2);
-        verticalLayout_2->setObjectName("verticalLayout_2");
-        verticalLayout_2->setContentsMargins(0, 0, 0, 0);
-        label_4 = new QLabel(verticalLayoutWidget_2);
-        label_4->setObjectName("label_4");
         label_4->setFont(font1);
-
-        verticalLayout_2->addWidget(label_4, 0, Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter);
-
-        verticalLayoutWidget_3 = new QWidget(wizardPage_3);
-        verticalLayoutWidget_3->setObjectName("verticalLayoutWidget_3");
-        verticalLayoutWidget_3->setGeometry(QRect(48, 60, 91, 139));
-        verticalLayout_3 = new QVBoxLayout(verticalLayoutWidget_3);
-        verticalLayout_3->setObjectName("verticalLayout_3");
-        verticalLayout_3->setContentsMargins(0, 0, 0, 0);
-        labelUsername = new QLabel(verticalLayoutWidget_3);
+        label_3 = new QLabel(wizardPage_3);
+        label_3->setObjectName("label_3");
+        label_3->setGeometry(QRect(50, 12, 219, 27));
+        label_3->setFont(font1);
+        labelUsername = new QLabel(wizardPage_3);
         labelUsername->setObjectName("labelUsername");
-
-        verticalLayout_3->addWidget(labelUsername, 0, Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignBottom);
-
-        labelPassword = new QLabel(verticalLayoutWidget_3);
+        labelUsername->setGeometry(QRect(68, 46, 65, 20));
+        labelPassword = new QLabel(wizardPage_3);
         labelPassword->setObjectName("labelPassword");
-
-        verticalLayout_3->addWidget(labelPassword, 0, Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignBottom);
-
-        labelAgain = new QLabel(verticalLayoutWidget_3);
+        labelPassword->setGeometry(QRect(72, 70, 58, 20));
+        labelAgain = new QLabel(wizardPage_3);
         labelAgain->setObjectName("labelAgain");
-
-        verticalLayout_3->addWidget(labelAgain, 0, Qt::AlignmentFlag::AlignRight);
-
-        labelRootPassword = new QLabel(verticalLayoutWidget_3);
+        labelAgain->setGeometry(QRect(94, 92, 36, 20));
+        labelRootPassword = new QLabel(wizardPage_3);
         labelRootPassword->setObjectName("labelRootPassword");
-
-        verticalLayout_3->addWidget(labelRootPassword, 0, Qt::AlignmentFlag::AlignRight);
-
-        labelRootPasswordAgain = new QLabel(verticalLayoutWidget_3);
+        labelRootPassword->setGeometry(QRect(42, 116, 87, 20));
+        labelRootPasswordAgain = new QLabel(wizardPage_3);
         labelRootPasswordAgain->setObjectName("labelRootPasswordAgain");
-
-        verticalLayout_3->addWidget(labelRootPasswordAgain, 0, Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop);
-
-        verticalLayoutWidget_4 = new QWidget(wizardPage_3);
-        verticalLayoutWidget_4->setObjectName("verticalLayoutWidget_4");
-        verticalLayoutWidget_4->setGeometry(QRect(146, 60, 107, 139));
-        verticalLayout_4 = new QVBoxLayout(verticalLayoutWidget_4);
-        verticalLayout_4->setSpacing(0);
-        verticalLayout_4->setObjectName("verticalLayout_4");
-        verticalLayout_4->setContentsMargins(0, 0, 0, 0);
-        lineEditUsername = new QLineEdit(verticalLayoutWidget_4);
+        labelRootPasswordAgain->setGeometry(QRect(92, 138, 36, 20));
+        lineEditUsername = new QLineEdit(wizardPage_3);
         lineEditUsername->setObjectName("lineEditUsername");
-
-        verticalLayout_4->addWidget(lineEditUsername);
-
-        lineEditPassword = new QLineEdit(verticalLayoutWidget_4);
+        lineEditUsername->setGeometry(QRect(136, 42, 125, 25));
+        lineEditPassword = new QLineEdit(wizardPage_3);
         lineEditPassword->setObjectName("lineEditPassword");
-
-        verticalLayout_4->addWidget(lineEditPassword);
-
-        lineEditPasswordAgain = new QLineEdit(verticalLayoutWidget_4);
+        lineEditPassword->setGeometry(QRect(136, 64, 125, 25));
+        lineEditPassword->setEchoMode(QLineEdit::EchoMode::Password);
+        lineEditPasswordAgain = new QLineEdit(wizardPage_3);
         lineEditPasswordAgain->setObjectName("lineEditPasswordAgain");
-
-        verticalLayout_4->addWidget(lineEditPasswordAgain, 0, Qt::AlignmentFlag::AlignVCenter);
-
-        lineEditRootPassword = new QLineEdit(verticalLayoutWidget_4);
+        lineEditPasswordAgain->setGeometry(QRect(136, 88, 125, 24));
+        lineEditPasswordAgain->setEchoMode(QLineEdit::EchoMode::Password);
+        lineEditRootPassword = new QLineEdit(wizardPage_3);
         lineEditRootPassword->setObjectName("lineEditRootPassword");
-
-        verticalLayout_4->addWidget(lineEditRootPassword, 0, Qt::AlignmentFlag::AlignVCenter);
-
-        lineEditRootPasswordAgain = new QLineEdit(verticalLayoutWidget_4);
+        lineEditRootPassword->setGeometry(QRect(136, 110, 125, 25));
+        lineEditRootPassword->setEchoMode(QLineEdit::EchoMode::Password);
+        lineEditRootPasswordAgain = new QLineEdit(wizardPage_3);
         lineEditRootPasswordAgain->setObjectName("lineEditRootPasswordAgain");
-
-        verticalLayout_4->addWidget(lineEditRootPasswordAgain, 0, Qt::AlignmentFlag::AlignVCenter);
-
-        verticalLayoutWidget_5 = new QWidget(wizardPage_3);
-        verticalLayoutWidget_5->setObjectName("verticalLayoutWidget_5");
-        verticalLayoutWidget_5->setGeometry(QRect(202, 206, 82, 29));
-        verticalLayout_6 = new QVBoxLayout(verticalLayoutWidget_5);
-        verticalLayout_6->setObjectName("verticalLayout_6");
-        verticalLayout_6->setContentsMargins(0, 0, 0, 0);
-        installButton = new QPushButton(verticalLayoutWidget_5);
-        installButton->setObjectName("installButton");
-
-        verticalLayout_6->addWidget(installButton);
-
-        horizontalLayoutWidget = new QWidget(wizardPage_3);
-        horizontalLayoutWidget->setObjectName("horizontalLayoutWidget");
-        horizontalLayoutWidget->setGeometry(QRect(296, 60, 119, 137));
-        horizontalLayout = new QHBoxLayout(horizontalLayoutWidget);
-        horizontalLayout->setObjectName("horizontalLayout");
-        horizontalLayout->setContentsMargins(0, 0, 0, 0);
-        comboDesktopEnvironment = new QComboBox(horizontalLayoutWidget);
-        comboDesktopEnvironment->setObjectName("comboDesktopEnvironment");
-
-        horizontalLayout->addWidget(comboDesktopEnvironment, 0, Qt::AlignmentFlag::AlignTop);
-
-        verticalLayoutWidget_6 = new QWidget(wizardPage_3);
-        verticalLayoutWidget_6->setObjectName("verticalLayoutWidget_6");
-        verticalLayoutWidget_6->setGeometry(QRect(130, 241, 229, 72));
-        verticalLayout_5 = new QVBoxLayout(verticalLayoutWidget_6);
-        verticalLayout_5->setObjectName("verticalLayout_5");
-        verticalLayout_5->setContentsMargins(0, 0, 0, 0);
-        logWidget = new QPlainTextEdit(verticalLayoutWidget_6);
-        logWidget->setObjectName("logWidget");
-
-        verticalLayout_5->addWidget(logWidget);
-
+        lineEditRootPasswordAgain->setGeometry(QRect(136, 134, 125, 25));
+        lineEditRootPasswordAgain->setEchoMode(QLineEdit::EchoMode::Password);
         Installwizard->addPage(wizardPage_3);
 
         retranslateUi(Installwizard);
@@ -271,9 +194,9 @@ public:
     void retranslateUi(QWizard *Installwizard)
     {
         Installwizard->setWindowTitle(QCoreApplication::translate("Installwizard", "Installwizard", nullptr));
-        label->setText(QCoreApplication::translate("Installwizard", "Download the latest Arch Linux ISO.", nullptr));
+        label->setText(QCoreApplication::translate("Installwizard", "Download the latest Arch Linux ISO", nullptr));
         downloadButton->setText(QCoreApplication::translate("Installwizard", "Download", nullptr));
-        driveLabel->setText(QCoreApplication::translate("Installwizard", "Drive:", nullptr));
+        label_6->setText(QCoreApplication::translate("Installwizard", "and install dependencies.", nullptr));
         QTreeWidgetItem *___qtreewidgetitem = treePartitions->headerItem();
         ___qtreewidgetitem->setText(3, QCoreApplication::translate("Installwizard", "Mount", nullptr));
         ___qtreewidgetitem->setText(2, QCoreApplication::translate("Installwizard", "Type", nullptr));
@@ -283,15 +206,17 @@ public:
         createPartButton->setText(QCoreApplication::translate("Installwizard", "Create Default Partitions", nullptr));
         label_5->setText(QCoreApplication::translate("Installwizard", "Partitioning", nullptr));
         label_2->setText(QCoreApplication::translate("Installwizard", "Select a drive for installation", nullptr));
+        driveDropdown->setItemText(0, QCoreApplication::translate("Installwizard", "Select a Drive", nullptr));
+
         prepareButton->setText(QCoreApplication::translate("Installwizard", "Prepare Drive", nullptr));
-        label_3->setText(QCoreApplication::translate("Installwizard", "Add user and set passwords", nullptr));
+        installButton->setText(QCoreApplication::translate("Installwizard", "Submit", nullptr));
         label_4->setText(QCoreApplication::translate("Installwizard", "Choose a desktop", nullptr));
+        label_3->setText(QCoreApplication::translate("Installwizard", "Add user and set passwords", nullptr));
         labelUsername->setText(QCoreApplication::translate("Installwizard", "Username:", nullptr));
         labelPassword->setText(QCoreApplication::translate("Installwizard", "Password:", nullptr));
         labelAgain->setText(QCoreApplication::translate("Installwizard", "Again:", nullptr));
         labelRootPassword->setText(QCoreApplication::translate("Installwizard", "Root Password:", nullptr));
         labelRootPasswordAgain->setText(QCoreApplication::translate("Installwizard", "Again:", nullptr));
-        installButton->setText(QCoreApplication::translate("Installwizard", "Submit", nullptr));
     } // retranslateUi
 
 };
