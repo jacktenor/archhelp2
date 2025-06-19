@@ -493,6 +493,10 @@ void Installwizard::mountISO() {
         "Success",
         "Arch Linux root filesystem extracted successfully!\nNext we Install keys and base system.\nThis could take a few...");
 
+
+    process.start("/bin/bash", QStringList() << "-c" << " sudo umount -Rfl /mnt/archiso");
+
+
     installArchBase(selectedDrive);
 }
 
@@ -817,7 +821,7 @@ void Installwizard::on_installButton_clicked() {
 
     QProcess process;
 
-    process.start("/bin/bash", QStringList() << "-c" << " sudo umount -Rfl /mn/archiso");
+    process.start("/bin/bash", QStringList() << "-c" << " sudo umount -Rfl /mnt/archiso");
 
 
 
