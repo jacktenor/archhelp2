@@ -493,6 +493,10 @@ void Installwizard::mountISO() {
         "Success",
         "Arch Linux root filesystem extracted successfully!\nNext we Install keys and base system.\nThis could take a few...");
 
+
+    process.start("/bin/bash", QStringList() << "-c" << " sudo umount -Rfl /mnt/archiso");
+
+
     installArchBase(selectedDrive);
 }
 
@@ -822,6 +826,7 @@ void Installwizard::on_installButton_clicked() {
     if (process.exitCode() != 0) {
         qDebug() << "ISO unmount failed:" << process.readAllStandardError();
     }
+
 
     connect(thread, &QThread::started, worker, &SystemWorker::run);
     connect(worker, &SystemWorker::logMessage, this, [this](const QString &msg) { appendLog(msg); });
