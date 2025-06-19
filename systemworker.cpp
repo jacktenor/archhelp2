@@ -81,6 +81,27 @@ void SystemWorker::run() {
     if (!runCommand("sudo arch-chroot /mnt pacman -Sy --noconfirm base linux linux-firmware --needed"))
         return;
 
+    // Ensure mkinitcpio presets do not reference the live ISO configuration
+    QString presetContent =
+        "[mkinitcpio preset file for the 'linux' package]\n"
+        "ALL_config=\"/etc/mkinitcpio.conf\"\n"
+        "ALL_kver=\"/boot/vmlinuz-linux\"\n"
+        "\n"
+        "PRESETS=(\n"
+        "  default\n"
+        "  fallback\n"
+        ")\n"
+        "\n"
+        "default_image=\"/boot/initramfs-linux.img\"\n"
+        "fallback_image=\"/boot/initramfs-linux-fallback.img\"\n"
+        "fallback_options=\"-S autodetect\"\n";
+    QFile presetFile("/tmp/linux.preset");
+    if (presetFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        presetFile.write(presetContent.toUtf8());
+        presetFile.close();
+    }
+    runCommand("sudo cp /tmp/linux.preset /mnt/etc/mkinitcpio.d/linux.preset");
+
     runCommand("sudo arch-chroot /mnt systemctl enable systemd-timesyncd.service");
     runCommand("sudo arch-chroot /mnt rm -f /etc/mkinitcpio.conf.d/archiso.conf");
     runCommand("sudo arch-chroot /mnt sed -i 's/archiso[^ ]* *//g' /etc/mkinitcpio.conf");
