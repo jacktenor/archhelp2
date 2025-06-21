@@ -61,6 +61,7 @@ void SystemWorker::run() {
         return;
 
     emit logMessage("ISO mounted and rootfs extracted");
+    runCommand("sudo umount -Rfl /mnt/archiso");
 
     runCommand("sudo rm -f /mnt/etc/resolv.conf");
     runCommand("sudo cp /etc/resolv.conf /mnt/etc/resolv.conf");
@@ -159,8 +160,6 @@ void SystemWorker::run() {
     else dmService = "lightdm.service";
 
     runCommand(QString("sudo arch-chroot /mnt systemctl enable %1").arg(dmService));
-    runCommand("sudo arch-chroot /mnt rm -f /boot/initramfs-linux*");
-    runCommand("sudo arch-chroot /mnt mkinitcpio -P");
 
     runCommand("sudo arch-chroot /mnt bash -c 'rm -f /etc/fstab'");
     runCommand("sudo bash -c 'genfstab -U /mnt > /mnt/etc/fstab'");
