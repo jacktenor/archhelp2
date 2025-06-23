@@ -164,6 +164,21 @@ void SystemWorker::run() {
 
     runCommand(QString("sudo arch-chroot /mnt systemctl enable %1").arg(dmService));
 
+    // Configure the display manager theme so the login screen has sane colors
+    if (dmService == "lightdm.service") {
+        runCommand(
+            "sudo arch-chroot /mnt bash -c \"printf '[greeter]\\n"
+            "theme-name=Adwaita\\n"
+            "icon-theme-name=Adwaita\\n"
+            "background=#000000\\n' > /etc/lightdm/lightdm-gtk-greeter.conf\"
+        );
+    } else if (dmService == "sddm.service") {
+        runCommand(
+            "sudo arch-chroot /mnt bash -c \"mkdir -p /etc/sddm.conf.d && "
+            "printf '[Theme]\\nCurrent=breeze\\n' > /etc/sddm.conf.d/10-theme.conf\"
+        );
+    }
+
     runCommand("sudo arch-chroot /mnt bash -c 'rm -f /etc/fstab'");
     runCommand("sudo bash -c 'genfstab -U /mnt > /mnt/etc/fstab'");
     runCommand("sudo bash -c \"awk '!/^#|^$/{print; exit} 1' /mnt/etc/fstab > /mnt/etc/fstab.clean && mv /mnt/etc/fstab.clean /mnt/etc/fstab\"");
