@@ -78,6 +78,9 @@ void SystemWorker::run() {
     runCommand("sudo arch-chroot /mnt pacman-key --populate archlinux");
     runCommand("sudo arch-chroot /mnt pacman -Sy --noconfirm archlinux-keyring");
 
+    // Remove leftover firmware files from the live ISO to avoid conflicts
+    runCommand("sudo rm -rf /mnt/usr/lib/firmware/nvidia");
+
     emit logMessage("Installing base, linux, linux-firmware…");
     if (!runCommand("sudo arch-chroot /mnt pacman -Sy --noconfirm base linux linux-firmware --needed"))
         return;
