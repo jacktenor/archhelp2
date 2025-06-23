@@ -746,9 +746,10 @@ void Installwizard::on_installButton_clicked() {
     connect(worker, &SystemWorker::errorOccurred, this, [this](const QString &msg) {
         QMessageBox::critical(this, "Error", msg);
     });
+
     connect(worker, &SystemWorker::finished, thread, &QThread::quit);
     connect(worker, &SystemWorker::finished, worker, &QObject::deleteLater);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
-    thread->start();
+    thread->start(); 
 }

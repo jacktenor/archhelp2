@@ -170,12 +170,12 @@ void SystemWorker::run() {
             "sudo arch-chroot /mnt bash -c \"printf '[greeter]\\n"
             "theme-name=Adwaita\\n"
             "icon-theme-name=Adwaita\\n"
-            "background=#000000\\n' > /etc/lightdm/lightdm-gtk-greeter.conf\"
+            "background=#000000\\n' > /etc/lightdm/lightdm-gtk-greeter.conf\""
         );
     } else if (dmService == "sddm.service") {
         runCommand(
             "sudo arch-chroot /mnt bash -c \"mkdir -p /etc/sddm.conf.d && "
-            "printf '[Theme]\\nCurrent=breeze\\n' > /etc/sddm.conf.d/10-theme.conf\"
+            "printf '[Theme]\\nCurrent=breeze\\n' > /etc/sddm.conf.d/10-theme.conf\""
         );
     }
 
