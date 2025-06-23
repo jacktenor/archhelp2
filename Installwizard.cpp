@@ -9,6 +9,7 @@
 #include <QRegularExpression>
 #include <QNetworkReply>
 #include <QFile>
+#include <QTextStream>
 #include <QDir>
 #include <unistd.h>
 #include <QStandardPaths>
@@ -184,7 +185,28 @@ void Installwizard::installDependencies() {
         "wget"     // for downloading bootstrap if needed
     };
 
-    QString installCmd = "pkexec apt install -y " + packages.join(" ");
+    // Detect distribution by reading /etc/os-release
+    QString distro;
+    QFile osRelease("/etc/os-release");
+    if (osRelease.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&osRelease);
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            if (line.startsWith("ID=")) {
+                distro = line.section('=', 1).remove('"').trimmed();
+                break;
+            }
+        }
+    }
+
+    QString installCmd;
+    if (distro == "fedora") {
+        installCmd = "pkexec dnf install -y " + packages.join(" ");
+    } else if (distro == "arch" || distro == "archlinux") {
+        installCmd = "pkexec pacman -S --noconfirm " + packages.join(" ");
+    } else {
+        installCmd = "pkexec apt install -y " + packages.join(" ");
+    }
 
     qDebug() << "Installing dependencies:" << installCmd;
     appendLog("Installing dependencies:...");
