@@ -4,6 +4,10 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <errno.h>
+#include <errno.h>
+#include <QProcess>
+#include <QFileInfo>
+
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
@@ -31,6 +35,17 @@ int main(int argc, char *argv[]) {
             return 0;
 
         // If startDetached() failed, notify the user
+        // display a password prompt if needed.
+        QString path = QFileInfo(argv[0]).absoluteFilePath();
+        execlp("pkexec", "pkexec", path.toUtf8().constData(), (char*)nullptr);
+        // If execlp returns, it failed
+        QStringList args;
+        args << QFileInfo(argv[0]).absoluteFilePath();
+
+        if (QProcess::startDetached("pkexec", args)) {
+            return 0; // Child process launched; exit current instance
+        }
+
         QMessageBox::critical(nullptr, "Permissions Error",
                              "This installer must be run as root.\n"
                              "Please restart it using 'sudo' or 'pkexec'.");
