@@ -34,6 +34,18 @@ Installwizard::Installwizard(QWidget *parent) :
             QMessageBox::warning(this, "Error", "Please select a valid drive.");
             return;
         }
+
+        QMessageBox::StandardButton confirm = QMessageBox::question(
+            this,
+            tr("Confirm Drive"),
+            tr("You are about to destroy all data on %1!!! Are you absolutely "
+               "sure this is correct?")
+                .arg(selectedDrive),
+            QMessageBox::Yes | QMessageBox::No);
+
+        if (confirm != QMessageBox::Yes)
+            return;
+
         // Remove "/dev/" prefix for internal processing
         prepareDrive(selectedDrive.mid(5));
     });
