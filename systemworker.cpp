@@ -132,7 +132,8 @@ void SystemWorker::run() {
     if (!runCommand("sudo arch-chroot /mnt pacman -Syu --noconfirm"))
         return;
 
-    emit logMessage("Adding user and configuring system…");
+    emit logMessage("Adding user and configuring system.");
+    emit logMessage("This will take a few…");
     runCommand(QString("sudo arch-chroot /mnt useradd -m -G wheel %1").arg(username));
     runCommand(QString("sudo arch-chroot /mnt bash -c \"echo '%1:%2' | chpasswd\"" ).arg(username, password));
     runCommand(QString("sudo arch-chroot /mnt bash -c \"echo 'root:%1' | chpasswd\"" ).arg(rootPassword));
