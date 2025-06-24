@@ -3,15 +3,52 @@
 #include <QMessageBox>
 #include <QFileInfo>
 #include <QProcess>
+<<<<<<< HEAD
 
+=======
+#include <errno.h>
+
+#include <errno.h>
+#include <QProcess>
+#include <QFileInfo>
+>>>>>>> 341003a4160a32ae7e008e2d87d708f1703bba10
 
 #include <unistd.h>
+#include <vector>
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     // Ensure the installer has the necessary privileges to run
     if (geteuid() != 0) {
+        // Relaunch the program through pkexec which will open a password
+        // dialog. We use execvp so the current process is replaced and
+        // polkit can communicate with the authentication agent.
+        QString path = QFileInfo(argv[0]).absoluteFilePath();
+
+        QList<QByteArray> argBytes{"pkexec", "env"};
+        QByteArray disp = qgetenv("DISPLAY");
+        if (!disp.isEmpty())
+            argBytes << QByteArray("DISPLAY=") + disp;
+        QByteArray xauth = qgetenv("XAUTHORITY");
+        if (!xauth.isEmpty())
+            argBytes << QByteArray("./ArchHelp
+Refusing to render service to dead parents.
+XAUTHORITY=") + xauth;
+        QByteArray qpa = qgetenv("QT_QPA_PLATFORMTHEME");
+        if (!qpa.isEmpty())
+            argBytes << QByteArray("QT_QPA_PLATFORMTHEME=") + qpa;
+        argBytes << path.toLocal8Bit();
+
+        std::vector<char*> execArgs;
+        execArgs.reserve(argBytes.size() + 1);
+        for (QByteArray &a : argBytes)
+            execArgs.push_back(a.data());
+        execArgs.push_back(nullptr);
+
+        execvp("pkexec", execArgs.data());
+        // If execvp returns, it failed
+
         // Try to relaunch the application using pkexec which will
         // display a password prompt. Preserve DISPLAY and XAUTHORITY
         // so the GUI can connect to the X server.
@@ -42,8 +79,12 @@ int main(int argc, char *argv[]) {
         }
 
         QMessageBox::critical(nullptr, "Permissions Error",
+<<<<<<< HEAD
                               "This installer must be run as root.\n"
                               "Please restart it using 'sudo' or 'pkexec'.");
+=======
+                             QString("Failed to run pkexec: %1").arg(strerror(errno)));
+>>>>>>> 341003a4160a32ae7e008e2d87d708f1703bba10
         return 1;
     }
 
