@@ -5,35 +5,40 @@
 #include <QProcess>
 #include <errno.h>
 #include <unistd.h>
+#include <vector>
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     // Ensure the installer has the necessary privileges to run
     if (geteuid() != 0) {
-        // Try to relaunch the application using pkexec which will
-        // display a password prompt. Preserve DISPLAY and XAUTHORITY
-        // so the GUI can connect to the X server.
+        // Relaunch the program through pkexec which will open a password
+        // dialog. We use execvp so the current process is replaced and
+        // polkit can communicate with the authentication agent.
         QString path = QFileInfo(argv[0]).absoluteFilePath();
-        QStringList args{"env"};
+
+        QList<QByteArray> argBytes{"pkexec", "env"};
         QByteArray disp = qgetenv("DISPLAY");
         if (!disp.isEmpty())
-            args << QString("DISPLAY=%1").arg(QString::fromLocal8Bit(disp));
+            argBytes << QByteArray("DISPLAY=") + disp;
         QByteArray xauth = qgetenv("XAUTHORITY");
         if (!xauth.isEmpty())
-            args << QString("XAUTHORITY=%1").arg(QString::fromLocal8Bit(xauth));
+            argBytes << QByteArray("XAUTHORITY=") + xauth;
         QByteArray qpa = qgetenv("QT_QPA_PLATFORMTHEME");
         if (!qpa.isEmpty())
-            args << QString("QT_QPA_PLATFORMTHEME=%1").arg(QString::fromLocal8Bit(qpa));
-        args << path;
+            argBytes << QByteArray("QT_QPA_PLATFORMTHEME=") + qpa;
+        argBytes << path.toLocal8Bit();
 
-        if (QProcess::startDetached("pkexec", args))
-            return 0;
+        std::vector<char*> execArgs;
+        execArgs.reserve(argBytes.size() + 1);
+        for (QByteArray &a : argBytes)
+            execArgs.push_back(a.data());
+        execArgs.push_back(nullptr);
 
-        // If startDetached() failed, notify the user
+        execvp("pkexec", execArgs.data());
+        // If execvp returns, it failed
         QMessageBox::critical(nullptr, "Permissions Error",
-                             "This installer must be run as root.\n"
-                             "Please restart it using 'sudo' or 'pkexec'.");
+                             QString("Failed to run pkexec: %1").arg(strerror(errno)));
         return 1;
     }
 
