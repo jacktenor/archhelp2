@@ -14,7 +14,8 @@ public:
                        const QString &username,
                        const QString &password,
                        const QString &rootPassword,
-                       const QString &desktopEnv);
+                       const QString &desktopEnv,
+                       bool useEfi);
 
 signals:
     void logMessage(const QString &msg);
@@ -30,6 +31,7 @@ private:
     QString password;
     QString rootPassword;
     QString desktopEnv;
+    bool useEfi = false;
 
     bool runCommand(const QString &cmd);
 };
