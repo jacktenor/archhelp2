@@ -3,16 +3,6 @@
 #include <QMessageBox>
 #include <QFileInfo>
 #include <QProcess>
-<<<<<<< HEAD
-
-=======
-#include <errno.h>
-
-#include <errno.h>
-#include <QProcess>
-#include <QFileInfo>
->>>>>>> 341003a4160a32ae7e008e2d87d708f1703bba10
-
 #include <unistd.h>
 #include <vector>
 
@@ -32,9 +22,7 @@ int main(int argc, char *argv[]) {
             argBytes << QByteArray("DISPLAY=") + disp;
         QByteArray xauth = qgetenv("XAUTHORITY");
         if (!xauth.isEmpty())
-            argBytes << QByteArray("./ArchHelp
-Refusing to render service to dead parents.
-XAUTHORITY=") + xauth;
+            argBytes << QByteArray("XAUTHORITY=") + xauth;
         QByteArray qpa = qgetenv("QT_QPA_PLATFORMTHEME");
         if (!qpa.isEmpty())
             argBytes << QByteArray("QT_QPA_PLATFORMTHEME=") + qpa;
@@ -49,42 +37,14 @@ XAUTHORITY=") + xauth;
         execvp("pkexec", execArgs.data());
         // If execvp returns, it failed
 
-        // Try to relaunch the application using pkexec which will
-        // display a password prompt. Preserve DISPLAY and XAUTHORITY
-        // so the GUI can connect to the X server.
-        QString path = QFileInfo(argv[0]).absoluteFilePath();
-        QStringList args{"env"};
-        QByteArray disp = qgetenv("DISPLAY");
-        if (!disp.isEmpty())
-            args << QString("DISPLAY=%1").arg(QString::fromLocal8Bit(disp));
-        QByteArray xauth = qgetenv("XAUTHORITY");
-        if (!xauth.isEmpty())
-            args << QString("XAUTHORITY=%1").arg(QString::fromLocal8Bit(xauth));
-        QByteArray qpa = qgetenv("QT_QPA_PLATFORMTHEME");
-        if (!qpa.isEmpty())
-            args << QString("QT_QPA_PLATFORMTHEME=%1").arg(QString::fromLocal8Bit(qpa));
-        args << path;
-
-        if (QProcess::startDetached("pkexec", args))
-            return 0;
-
-        // If startDetached() failed, notify the user
-        // display a password prompt if needed.
-        execlp("pkexec", "pkexec", path.toUtf8().constData(), (char*)nullptr);
-        // If execlp returns, it failed
-        args << QFileInfo(argv[0]).absoluteFilePath();
-
-        if (QProcess::startDetached("pkexec", args)) {
             return 0; // Child process launched; exit current instance
-        }
+
 
         QMessageBox::critical(nullptr, "Permissions Error",
-<<<<<<< HEAD
+
                               "This installer must be run as root.\n"
                               "Please restart it using 'sudo' or 'pkexec'.");
-=======
-                             QString("Failed to run pkexec: %1").arg(strerror(errno)));
->>>>>>> 341003a4160a32ae7e008e2d87d708f1703bba10
+
         return 1;
     }
 
