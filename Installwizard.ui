@@ -169,7 +169,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Create Default Partitions</string>
+     <string>Prepare For EFI</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_5">
