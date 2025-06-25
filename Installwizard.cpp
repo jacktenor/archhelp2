@@ -16,12 +16,17 @@
 #include <QThread>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <algorithm>
 
 Installwizard::Installwizard(QWidget *parent) :
     QWizard(parent),
     ui(new Ui::Installwizard) {
     ui->setupUi(this);
     setWindowTitle("Arch Linux Installer");
+
+    // Initially disable navigation buttons until each page completes its work
+    setWizardButtonEnabled(QWizard::NextButton, false);
+    setWizardButtonEnabled(QWizard::FinishButton, false);
 
 
     // Connect refreshButton to populate drives
@@ -34,6 +39,23 @@ Installwizard::Installwizard(QWidget *parent) :
             QMessageBox::warning(this, "Error", "Please select a valid drive.");
             return;
         }
+
+        QMessageBox::StandardButton confirm = QMessageBox::question(
+            this,
+            tr("Confirm Drive"),
+            tr("You are about to destroy all data on %1!!! Are you absolutely "
+               "sure this is correct?")
+                .arg(selectedDrive),
+            QMessageBox::Yes | QMessageBox::No);
+
+        if (confirm != QMessageBox::Yes)
+            return;
+
+        efiInstall = false; // legacy mode
+
+        // Disable advance until drive prep is done
+        setWizardButtonEnabled(QWizard::NextButton, false);
+
         // Remove "/dev/" prefix for internal processing
         prepareDrive(selectedDrive.mid(5));
     });
@@ -43,6 +65,7 @@ Installwizard::Installwizard(QWidget *parent) :
 
     // Inside Installwizard constructor
     connect(ui->downloadButton, &QPushButton::clicked, this, [=]() {
+        setWizardButtonEnabled(QWizard::NextButton, false);
         downloadISO(ui->progressBar);  // Pass the progress bar to show download progress
     });
 
@@ -50,13 +73,15 @@ Installwizard::Installwizard(QWidget *parent) :
         this, &Installwizard::on_installButton_clicked);
 
     connect(this, &QWizard::currentIdChanged, this, [this](int id) {
-        if (id == 1) { // partition page
+        if (id == 0) {
+            setWizardButtonEnabled(QWizard::NextButton, false);
+        } else if (id == 1) {
+            setWizardButtonEnabled(QWizard::NextButton, false);
             QString drive = ui->driveDropdown->currentText().mid(5);
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
-        }
-        if (id == 2) { // final install page
-
+        } else if (id == 2) {
+            setWizardButtonEnabled(QWizard::FinishButton, false);
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
                     "GNOME", "KDE Plasma", "XFCE", "LXQt", "Cinnamon", "MATE", "i3"
@@ -72,8 +97,10 @@ Installwizard::Installwizard(QWidget *parent) :
 
     connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
         QString drive = ui->driveDropdown->currentText().mid(5);
-        if (!drive.isEmpty())
-            createDefaultPartitions(drive);
+        if (!drive.isEmpty()) {
+            setWizardButtonEnabled(QWizard::NextButton, false);
+            prepareForEfi(drive);
+        }
     });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
@@ -171,6 +198,11 @@ Installwizard::~Installwizard() {
     delete ui;
 }
 
+void Installwizard::setWizardButtonEnabled(QWizard::WizardButton which, bool enabled) {
+    if (QAbstractButton *btn = button(which))
+        btn->setEnabled(enabled);
+}
+
 void Installwizard::installDependencies() {
 
 
@@ -226,6 +258,9 @@ void Installwizard::installDependencies() {
     }
 
     appendLog("Dependencies installed, click next to proceed.");
+
+    // Allow user to advance to partitioning page
+    setWizardButtonEnabled(QWizard::NextButton, true);
 
     getAvailableDrives();
 }
@@ -285,12 +320,12 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 
     // Find and kill processes using the mount point
-    process.start("sudo fuser -vk " + mountPoint);
+    process.start("sudo", QStringList{"fuser", "-vk", mountPoint});
     process.waitForFinished();
     qDebug() << "Killed processes using" << mountPoint;
 
     // Try unmounting normally
-    process.start("sudo umount " + mountPoint);
+    process.start("sudo", QStringList{"umount", mountPoint});
     process.waitForFinished();
     if (process.exitCode() == 0) {
         qDebug() << "Unmounted successfully: " << mountPoint;
@@ -298,7 +333,7 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 
     // If normal unmount failed, try lazy unmount
-    process.start("sudo umount -l " + mountPoint);
+    process.start("sudo", QStringList{"umount", "-l", mountPoint});
     process.waitForFinished();
     if (process.exitCode() == 0) {
         qDebug() << "Lazy unmounted: " << mountPoint;
@@ -306,7 +341,7 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 
     // If still fails, force unmount
-    process.start("sudo umount -f " + mountPoint);
+    process.start("sudo", QStringList{"umount", "-f", mountPoint});
     process.waitForFinished();
     if (process.exitCode() != 0) {
         //  QMessageBox::critical(nullptr, "Error", "Failed to unmount " + mountPoint);
@@ -353,6 +388,10 @@ void Installwizard::prepareDrive(const QString &drive) {
         QMessageBox::critical(this, "Error", msg);
     });
     connect(worker, &InstallerWorker::installComplete, thread, &QThread::quit);
+    connect(worker, &InstallerWorker::installComplete, this, [this]() {
+        appendLog("\xE2\x9C\x85 Drive preparation complete.");
+        setWizardButtonEnabled(QWizard::NextButton, true);
+    });
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
@@ -387,16 +426,56 @@ void Installwizard::populatePartitionTable(const QString &drive) {
     }
 }
 
-void Installwizard::createDefaultPartitions(const QString &drive) {
+void Installwizard::prepareForEfi(const QString &drive) {
+    efiInstall = true; // remember choice for grub
     unmountDrive(drive);
+
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
+
+    // Determine next free region using parted
+    process.start("/usr/sbin/parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
+    process.waitForFinished();
+    QString out = process.readAllStandardOutput();
+
+    double freeStart = -1, freeEnd = -1;
+    int maxPart = 0;
+    for (const QString &line : out.split('\n', Qt::SkipEmptyParts)) {
+        QString trimmed = line.trimmed();
+        QStringList cols = trimmed.split(':');
+        if (cols.size() < 2)
+            continue;
+
+        bool ok = false;
+        int num = cols[0].toInt(&ok);
+        if (ok)
+            maxPart = std::max(maxPart, num);
+
+        if (trimmed.contains("free", Qt::CaseInsensitive) && cols.size() >= 3) {
+            double start = cols[1].remove(QRegularExpression("[^0-9.]")).toDouble();
+            double end = cols[2].remove(QRegularExpression("[^0-9.]")).toDouble();
+            if (end - start > 1000) { // choose space >1GiB
+                freeStart = start;
+                freeEnd = end;
+                break;
+            }
+        }
+    }
+
+    if (freeStart < 0) {
+        QMessageBox::critical(this, "Partition Error", "No suitable free space found.");
+        return;
+    }
+
+    double bootStart = freeStart + 1;          // align
+    double bootEnd = bootStart + 512;           // 512MiB ESP
+    double rootStart = bootEnd;
+    double rootEnd = freeEnd;
+
     QStringList cmds = {
-        // Legacy BIOS layout: boot partition + root partition
-        QString("sudo parted %1 --script mklabel msdos").arg(device),
-        QString("sudo parted %1 --script mkpart primary ext4 1MiB 513MiB").arg(device),
-        QString("sudo parted %1 --script set 1 boot on").arg(device),
-        QString("sudo parted %1 --script mkpart primary ext4 513MiB 100%").arg(device)
+        QString("sudo parted %1 --script mkpart ESP fat32 %2MiB %3MiB").arg(device).arg(bootStart).arg(bootEnd),
+        QString("sudo parted %1 --script set %2 esp on").arg(device).arg(maxPart + 1),
+        QString("sudo parted %1 --script mkpart primary ext4 %2MiB %3MiB").arg(device).arg(rootStart).arg(rootEnd)
     };
 
     for (const QString &cmd : cmds) {
@@ -410,7 +489,6 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
         }
     }
 
-    // Ensure kernel sees new table
     process.start("/bin/bash", QStringList()
                                 << "-c"
                                 << QString("sudo partprobe %1 && sudo udevadm settle")
@@ -418,6 +496,8 @@ void Installwizard::createDefaultPartitions(const QString &drive) {
     process.waitForFinished();
 
     populatePartitionTable(drive);
+    appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
+    setWizardButtonEnabled(QWizard::NextButton, true);
 }
 
 void Installwizard::mountPartitions(const QString &drive) {
@@ -670,13 +750,13 @@ void Installwizard::installGrub(const QString &drive) {
                                   "bash", "-c", "echo 'GRUB_DISABLE_LINUX_UUID=\"false\"' >> /etc/default/grub"
                               });
 
-    // Run grub-install inside chroot
-    int grubRet = QProcess::execute("sudo", {
-                                                "arch-chroot", "/mnt",
-                                                "grub-install",
-                                                "--target=i386-pc",
-                                                disk
-                                            });
+    QStringList grubArgs = {"arch-chroot", "/mnt", "grub-install"};
+    if (efiInstall) {
+        grubArgs << "--target=x86_64-efi" << "--efi-directory=/boot" << "--bootloader-id=GRUB";
+    } else {
+        grubArgs << "--target=i386-pc" << disk;
+    }
+    int grubRet = QProcess::execute("sudo", grubArgs);
     if (grubRet != 0) {
         QMessageBox::critical(nullptr, "Error", "grub-install failed.");
         return;
@@ -733,8 +813,11 @@ void Installwizard::on_installButton_clicked() {
     }
 
     SystemWorker *worker = new SystemWorker;
-    worker->setParameters(selectedDrive, username, password, rootPassword, desktopEnv);
+    worker->setParameters(selectedDrive, username, password, rootPassword, desktopEnv, efiInstall);
 
+
+    // Prevent finishing until the background install completes
+    setWizardButtonEnabled(QWizard::FinishButton, false);
 
     QThread *thread = new QThread;
     worker->moveToThread(thread);
@@ -747,6 +830,11 @@ void Installwizard::on_installButton_clicked() {
         QMessageBox::critical(this, "Error", msg);
     });
 
+    connect(worker, &SystemWorker::finished, this, [this]() {
+        appendLog("\xE2\x9C\x85 Installation complete.");
+        setWizardButtonEnabled(QWizard::FinishButton, true);
+        QMessageBox::information(this, "Complete", "System installation finished.");
+    });
     connect(worker, &SystemWorker::finished, thread, &QThread::quit);
     connect(worker, &SystemWorker::finished, worker, &QObject::deleteLater);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
