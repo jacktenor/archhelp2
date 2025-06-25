@@ -25,6 +25,10 @@ Installwizard::Installwizard(QWidget *parent) :
     setWindowTitle("Arch Linux Installer");
 
     // Initially disable navigation buttons until each page completes its work
+    setWizardButtonEnabled(QWizard::NextButton, false);
+    setWizardButtonEnabled(QWizard::FinishButton, false);
+
+
 
     setWizardButtonEnabled(QWizard::NextButton, false);
     setWizardButtonEnabled(QWizard::FinishButton, false);
@@ -32,7 +36,6 @@ Installwizard::Installwizard(QWidget *parent) :
 
     setButtonEnabled(QWizard::NextButton, false);
     setButtonEnabled(QWizard::FinishButton, false);
-
 
     // Connect refreshButton to populate drives
     connect(ui->partRefreshButton, &QPushButton::clicked, this, &Installwizard::populateDrives);
@@ -59,9 +62,7 @@ Installwizard::Installwizard(QWidget *parent) :
         efiInstall = false; // legacy mode
 
         // Disable advance until drive prep is done
-
         setWizardButtonEnabled(QWizard::NextButton, false);
-
 
         setButtonEnabled(QWizard::NextButton, false);
 
@@ -75,7 +76,6 @@ Installwizard::Installwizard(QWidget *parent) :
 
     // Inside Installwizard constructor
     connect(ui->downloadButton, &QPushButton::clicked, this, [=]() {
-
         setWizardButtonEnabled(QWizard::NextButton, false);
 
         setButtonEnabled(QWizard::NextButton, false);
@@ -92,6 +92,7 @@ Installwizard::Installwizard(QWidget *parent) :
             setWizardButtonEnabled(QWizard::NextButton, false);
 
 
+
             setButtonEnabled(QWizard::NextButton, false);
         } else if (id == 1) {
             setButtonEnabled(QWizard::NextButton, false);
@@ -99,7 +100,6 @@ Installwizard::Installwizard(QWidget *parent) :
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         } else if (id == 2) {
-
             setWizardButtonEnabled(QWizard::FinishButton, false);
 
 
@@ -120,6 +120,11 @@ Installwizard::Installwizard(QWidget *parent) :
     connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
         QString drive = ui->driveDropdown->currentText().mid(5);
         if (!drive.isEmpty()) {
+            setWizardButtonEnabled(QWizard::NextButton, false);
+            prepareForEfi(drive);
+        }
+    });
+
 
             setWizardButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
@@ -229,6 +234,11 @@ Installwizard::~Installwizard() {
     delete ui;
 }
 
+void Installwizard::setWizardButtonEnabled(QWizard::WizardButton which, bool enabled) {
+    if (QAbstractButton *btn = button(which))
+        btn->setEnabled(enabled);
+}
+
 void Installwizard::installDependencies() {
 
 
@@ -286,6 +296,9 @@ void Installwizard::installDependencies() {
     appendLog("Dependencies installed, click next to proceed.");
 
     // Allow user to advance to partitioning page
+    setWizardButtonEnabled(QWizard::NextButton, true);
+
+
 
     setWizardButtonEnabled(QWizard::NextButton, true);
 
@@ -349,12 +362,12 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 
     // Find and kill processes using the mount point
-    process.start("sudo fuser -vk " + mountPoint);
+    process.start("sudo", QStringList{"fuser", "-vk", mountPoint});
     process.waitForFinished();
     qDebug() << "Killed processes using" << mountPoint;
 
     // Try unmounting normally
-    process.start("sudo umount " + mountPoint);
+    process.start("sudo", QStringList{"umount", mountPoint});
     process.waitForFinished();
     if (process.exitCode() == 0) {
         qDebug() << "Unmounted successfully: " << mountPoint;
@@ -362,7 +375,7 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 
     // If normal unmount failed, try lazy unmount
-    process.start("sudo umount -l " + mountPoint);
+    process.start("sudo", QStringList{"umount", "-l", mountPoint});
     process.waitForFinished();
     if (process.exitCode() == 0) {
         qDebug() << "Lazy unmounted: " << mountPoint;
@@ -370,7 +383,7 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
     }
 
     // If still fails, force unmount
-    process.start("sudo umount -f " + mountPoint);
+    process.start("sudo", QStringList{"umount", "-f", mountPoint});
     process.waitForFinished();
     if (process.exitCode() != 0) {
         //  QMessageBox::critical(nullptr, "Error", "Failed to unmount " + mountPoint);
@@ -419,6 +432,8 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::installComplete, thread, &QThread::quit);
     connect(worker, &InstallerWorker::installComplete, this, [this]() {
         appendLog("\xE2\x9C\x85 Drive preparation complete.");
+        setWizardButtonEnabled(QWizard::NextButton, true);
+
 
         setWizardButtonEnabled(QWizard::NextButton, true);
 
@@ -530,6 +545,8 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
+    setWizardButtonEnabled(QWizard::NextButton, true);
+
 
     setWizardButtonEnabled(QWizard::NextButton, true);
 
@@ -854,7 +871,7 @@ void Installwizard::on_installButton_clicked() {
 
 
     // Prevent finishing until the background install completes
-
+    setWizardButtonEnabled(QWizard::FinishButton, false);
 
     setButtonEnabled(QWizard::FinishButton, false);
 
@@ -872,8 +889,6 @@ void Installwizard::on_installButton_clicked() {
     connect(worker, &SystemWorker::finished, this, [this]() {
         appendLog("\xE2\x9C\x85 Installation complete.");
         setWizardButtonEnabled(QWizard::FinishButton, true);
-
-
         setButtonEnabled(QWizard::FinishButton, true);
         QMessageBox::information(this, "Complete", "System installation finished.");
     });
