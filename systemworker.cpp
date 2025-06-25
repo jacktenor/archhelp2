@@ -11,12 +11,14 @@ void SystemWorker::setParameters(const QString &drv,
                                  const QString &user,
                                  const QString &pass,
                                  const QString &rootPass,
-                                 const QString &de) {
+                                 const QString &de,
+                                 bool efi) {
     drive = drv;
     username = user;
     password = pass;
     rootPassword = rootPass;
     desktopEnv = de;
+    useEfi = efi;
 }
 
 bool SystemWorker::runCommand(const QString &cmd) {
@@ -125,12 +127,21 @@ void SystemWorker::run() {
         return;
     runCommand("sudo arch-chroot /mnt sed -i '/2025-05-01-10-09-37-00/d' /etc/default/grub");
     runCommand("sudo arch-chroot /mnt bash -c \"echo 'GRUB_DISABLE_LINUX_UUID=false' >> /etc/default/grub\"");
-    if (!runCommand(QString("sudo arch-chroot /mnt grub-install --target=i386-pc /dev/%1").arg(drive)))
+
+    QString grubCmd;
+    if (useEfi) {
+        grubCmd = "sudo arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB";
+    } else {
+        grubCmd = QString("sudo arch-chroot /mnt grub-install --target=i386-pc /dev/%1").arg(drive);
+    }
+
+    if (!runCommand(grubCmd))
         return;
     if (!runCommand("sudo arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg"))
         return;
     if (!runCommand("sudo arch-chroot /mnt pacman -Syu --noconfirm"))
         return;
+    emit logMessage("System packages updated");
 
     emit logMessage("Adding user and configuring system.");
     emit logMessage("This will take a few…");
@@ -184,6 +195,7 @@ void SystemWorker::run() {
     runCommand("sudo bash -c 'genfstab -U /mnt > /mnt/etc/fstab'");
     runCommand("sudo bash -c \"awk '!/^#|^$/{print; exit} 1' /mnt/etc/fstab > /mnt/etc/fstab.clean && mv /mnt/etc/fstab.clean /mnt/etc/fstab\"");
 
+    emit logMessage("\xE2\x9C\x85 All tasks completed");
     emit finished();
 }
 
