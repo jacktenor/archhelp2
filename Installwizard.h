@@ -43,6 +43,7 @@ private:
     void installArchBase(const QString &selectedDrive);
     void installGrub(const QString &drive);
 
+    void setButtonEnabled(QWizard::WizardButton which, bool enabled);
     void setWizardButtonEnabled(QWizard::WizardButton which, bool enabled);
 };
 
