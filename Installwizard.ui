@@ -43,7 +43,7 @@
       <family>Noto Sans</family>
       <pointsize>12</pointsize>
       <italic>false</italic>
-      <weight>63</weight>
+      <fontweight>DemiBold</fontweight>
      </font>
     </property>
     <property name="styleSheet">
@@ -149,9 +149,9 @@
    <widget class="QPushButton" name="partRefreshButton">
     <property name="geometry">
      <rect>
-      <x>230</x>
+      <x>270</x>
       <y>316</y>
-      <width>75</width>
+      <width>67</width>
       <height>30</height>
      </rect>
     </property>
@@ -162,9 +162,9 @@
    <widget class="QPushButton" name="createPartButton">
     <property name="geometry">
      <rect>
-      <x>310</x>
+      <x>344</x>
       <y>316</y>
-      <width>160</width>
+      <width>103</width>
       <height>30</height>
      </rect>
     </property>
@@ -210,7 +210,7 @@
    <widget class="QComboBox" name="driveDropdown">
     <property name="geometry">
      <rect>
-      <x>-4</x>
+      <x>32</x>
       <y>316</y>
       <width>125</width>
       <height>30</height>
@@ -225,7 +225,7 @@
    <widget class="QPushButton" name="prepareButton">
     <property name="geometry">
      <rect>
-      <x>126</x>
+      <x>164</x>
       <y>316</y>
       <width>100</width>
       <height>30</height>

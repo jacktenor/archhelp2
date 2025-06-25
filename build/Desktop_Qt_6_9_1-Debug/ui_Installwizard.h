@@ -75,6 +75,7 @@ public:
         QFont font;
         font.setFamilies({QString::fromUtf8("Noto Sans")});
         font.setPointSize(12);
+        font.setWeight(QFont::DemiBold);
         font.setItalic(false);
         label->setFont(font);
         label->setStyleSheet(QString::fromUtf8("font: 600 12pt \"Noto Sans\";"));
@@ -102,10 +103,10 @@ public:
         treePartitions->setMinimumSize(QSize(420, 0));
         partRefreshButton = new QPushButton(partitionPage);
         partRefreshButton->setObjectName("partRefreshButton");
-        partRefreshButton->setGeometry(QRect(230, 316, 75, 30));
+        partRefreshButton->setGeometry(QRect(270, 316, 67, 30));
         createPartButton = new QPushButton(partitionPage);
         createPartButton->setObjectName("createPartButton");
-        createPartButton->setGeometry(QRect(310, 316, 160, 30));
+        createPartButton->setGeometry(QRect(344, 316, 103, 30));
         label_5 = new QLabel(partitionPage);
         label_5->setObjectName("label_5");
         label_5->setGeometry(QRect(192, 6, 99, 25));
@@ -118,10 +119,10 @@ public:
         driveDropdown = new QComboBox(partitionPage);
         driveDropdown->addItem(QString());
         driveDropdown->setObjectName("driveDropdown");
-        driveDropdown->setGeometry(QRect(-4, 316, 125, 30));
+        driveDropdown->setGeometry(QRect(32, 316, 125, 30));
         prepareButton = new QPushButton(partitionPage);
         prepareButton->setObjectName("prepareButton");
-        prepareButton->setGeometry(QRect(126, 316, 100, 30));
+        prepareButton->setGeometry(QRect(164, 316, 100, 30));
         logView2 = new QPlainTextEdit(partitionPage);
         logView2->setObjectName("logView2");
         logView2->setGeometry(QRect(32, 184, 420, 125));
