@@ -16,6 +16,7 @@
 #include <QThread>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <algorithm>
 
 Installwizard::Installwizard(QWidget *parent) :
     QWizard(parent),
@@ -73,6 +74,7 @@ Installwizard::Installwizard(QWidget *parent) :
     // Inside Installwizard constructor
     connect(ui->downloadButton, &QPushButton::clicked, this, [=]() {
         setWizardButtonEnabled(QWizard::NextButton, false);
+
         setButtonEnabled(QWizard::NextButton, false);
         downloadISO(ui->progressBar);  // Pass the progress bar to show download progress
     });
@@ -86,6 +88,7 @@ Installwizard::Installwizard(QWidget *parent) :
         } else if (id == 1) {
             setWizardButtonEnabled(QWizard::NextButton, false);
 
+
             setButtonEnabled(QWizard::NextButton, false);
         } else if (id == 1) {
             setButtonEnabled(QWizard::NextButton, false);
@@ -94,6 +97,7 @@ Installwizard::Installwizard(QWidget *parent) :
                 populatePartitionTable(drive);
         } else if (id == 2) {
             setWizardButtonEnabled(QWizard::FinishButton, false);
+
 
             setButtonEnabled(QWizard::FinishButton, false);
             if (ui->comboDesktopEnvironment->count() == 0) {
@@ -116,11 +120,13 @@ Installwizard::Installwizard(QWidget *parent) :
             prepareForEfi(drive);
         }
 
+
             setButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
         }
         if (!drive.isEmpty())
             prepareForEfi(drive);
+
     });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
@@ -414,6 +420,7 @@ void Installwizard::prepareDrive(const QString &drive) {
         appendLog("\xE2\x9C\x85 Drive preparation complete.");
         setWizardButtonEnabled(QWizard::NextButton, true);
 
+
         setButtonEnabled(QWizard::NextButton, true);
     });
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
@@ -522,6 +529,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
     setWizardButtonEnabled(QWizard::NextButton, true);
+
 
     setButtonEnabled(QWizard::NextButton, true);
 }
@@ -844,6 +852,7 @@ void Installwizard::on_installButton_clicked() {
 
     // Prevent finishing until the background install completes
 
+
     setButtonEnabled(QWizard::FinishButton, false);
 
     // Prevent finishing until the background install completes
@@ -863,6 +872,7 @@ void Installwizard::on_installButton_clicked() {
     connect(worker, &SystemWorker::finished, this, [this]() {
         appendLog("\xE2\x9C\x85 Installation complete.");
         setWizardButtonEnabled(QWizard::FinishButton, true);
+
 
         setButtonEnabled(QWizard::FinishButton, true);
         QMessageBox::information(this, "Complete", "System installation finished.");
