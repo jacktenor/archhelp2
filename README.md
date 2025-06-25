@@ -27,3 +27,21 @@ the final page.
 
 Make absolutely sure you selected the correct drive – the installer will wipe
 it completely.
+
+## Building from source
+
+Ensure the Qt development tools are installed. On Debian or Ubuntu based
+distributions you can install them with:
+
+```bash
+sudo apt-get install qtbase5-dev qt5-qmake build-essential
+```
+
+Then run `qmake` followed by `make` in the project directory:
+
+```bash
+qmake ArchHelp.pro
+make -j$(nproc)
+```
+
+The resulting `ArchHelp` binary can be found in the same folder.
