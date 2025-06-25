@@ -43,7 +43,7 @@
       <family>Noto Sans</family>
       <pointsize>12</pointsize>
       <italic>false</italic>
-      <fontweight>DemiBold</fontweight>
+      <weight>63</weight>
      </font>
     </property>
     <property name="styleSheet">
@@ -169,7 +169,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Create Default Partitions</string>
+     <string>Prepare For EFI</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_5">
