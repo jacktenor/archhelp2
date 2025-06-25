@@ -141,6 +141,7 @@ void SystemWorker::run() {
         return;
     if (!runCommand("sudo arch-chroot /mnt pacman -Syu --noconfirm"))
         return;
+    emit logMessage("System packages updated");
 
     emit logMessage("Adding user and configuring system.");
     emit logMessage("This will take a few…");
@@ -194,6 +195,7 @@ void SystemWorker::run() {
     runCommand("sudo bash -c 'genfstab -U /mnt > /mnt/etc/fstab'");
     runCommand("sudo bash -c \"awk '!/^#|^$/{print; exit} 1' /mnt/etc/fstab > /mnt/etc/fstab.clean && mv /mnt/etc/fstab.clean /mnt/etc/fstab\"");
 
+    emit logMessage("\xE2\x9C\x85 All tasks completed");
     emit finished();
 }
 
