@@ -44,6 +44,7 @@ private:
     void installGrub(const QString &drive);
 
 
+    void setWizardButtonEnabled(QWizard::WizardButton which, bool enabled);
 };
 
 #endif // INSTALLWIZARD_H
