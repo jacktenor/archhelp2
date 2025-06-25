@@ -47,6 +47,7 @@ Installwizard::Installwizard(QWidget *parent) :
             return;
 
         efiInstall = false; // legacy mode
+
         // Remove "/dev/" prefix for internal processing
         prepareDrive(selectedDrive.mid(5));
     });
