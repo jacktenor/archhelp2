@@ -24,6 +24,11 @@ Installwizard::Installwizard(QWidget *parent) :
     setWindowTitle("Arch Linux Installer");
 
     // Initially disable navigation buttons until each page completes its work
+
+    setWizardButtonEnabled(QWizard::NextButton, false);
+    setWizardButtonEnabled(QWizard::FinishButton, false);
+
+
     setButtonEnabled(QWizard::NextButton, false);
     setButtonEnabled(QWizard::FinishButton, false);
 
@@ -53,6 +58,10 @@ Installwizard::Installwizard(QWidget *parent) :
         efiInstall = false; // legacy mode
 
         // Disable advance until drive prep is done
+
+        setWizardButtonEnabled(QWizard::NextButton, false);
+
+
         setButtonEnabled(QWizard::NextButton, false);
 
 
@@ -74,6 +83,10 @@ Installwizard::Installwizard(QWidget *parent) :
 
     connect(this, &QWizard::currentIdChanged, this, [this](int id) {
         if (id == 0) {
+   setWizardButtonEnabled(QWizard::NextButton, false);
+        } else if (id == 1) {
+            setWizardButtonEnabled(QWizard::NextButton, false);
+
             setButtonEnabled(QWizard::NextButton, false);
         } else if (id == 1) {
             setButtonEnabled(QWizard::NextButton, false);
@@ -81,6 +94,9 @@ Installwizard::Installwizard(QWidget *parent) :
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         } else if (id == 2) {
+
+            setWizardButtonEnabled(QWizard::FinishButton, false);
+
             setButtonEnabled(QWizard::FinishButton, false);
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
@@ -98,12 +114,17 @@ Installwizard::Installwizard(QWidget *parent) :
     connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
         QString drive = ui->driveDropdown->currentText().mid(5);
         if (!drive.isEmpty()) {
-            setButtonEnabled(QWizard::NextButton, false);
+
+            setWizardButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
         }
-        if (!drive.isEmpty())
+
+            setButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
     });
+        if (!drive.isEmpty())
+            prepareForEfi(drive);
+
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
@@ -257,6 +278,9 @@ void Installwizard::installDependencies() {
     appendLog("Dependencies installed, click next to proceed.");
 
     // Allow user to advance to partitioning page
+
+    setWizardButtonEnabled(QWizard::NextButton, true);
+
     setButtonEnabled(QWizard::NextButton, true);
 
     getAvailableDrives();
@@ -387,6 +411,9 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::installComplete, thread, &QThread::quit);
     connect(worker, &InstallerWorker::installComplete, this, [this]() {
         appendLog("\xE2\x9C\x85 Drive preparation complete.");
+
+        setWizardButtonEnabled(QWizard::NextButton, true);
+
         setButtonEnabled(QWizard::NextButton, true);
     });
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
@@ -494,6 +521,9 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
+
+    setWizardButtonEnabled(QWizard::NextButton, true);
+
     setButtonEnabled(QWizard::NextButton, true);
 }
 
@@ -814,6 +844,7 @@ void Installwizard::on_installButton_clicked() {
 
 
     // Prevent finishing until the background install completes
+
     setButtonEnabled(QWizard::FinishButton, false);
 
     QThread *thread = new QThread;
