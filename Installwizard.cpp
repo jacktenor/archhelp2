@@ -79,11 +79,11 @@ Installwizard::Installwizard(QWidget *parent) :
     });
 
     connect(ui->installButton, &QPushButton::clicked,
-        this, &Installwizard::on_installButton_clicked);
+            this, &Installwizard::on_installButton_clicked);
 
     connect(this, &QWizard::currentIdChanged, this, [this](int id) {
         if (id == 0) {
-   setWizardButtonEnabled(QWizard::NextButton, false);
+            setWizardButtonEnabled(QWizard::NextButton, false);
         } else if (id == 1) {
             setWizardButtonEnabled(QWizard::NextButton, false);
 
@@ -119,11 +119,11 @@ Installwizard::Installwizard(QWidget *parent) :
             prepareForEfi(drive);
         }
 
-            setButtonEnabled(QWizard::NextButton, false);
-            prepareForEfi(drive);
+        setButtonEnabled(QWizard::NextButton, false);
+        prepareForEfi(drive);
     });
-        if (!drive.isEmpty())
-            prepareForEfi(drive);
+    if (!drive.isEmpty())
+        prepareForEfi(drive);
 
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
@@ -514,9 +514,9 @@ void Installwizard::prepareForEfi(const QString &drive) {
     }
 
     process.start("/bin/bash", QStringList()
-                                << "-c"
-                                << QString("sudo partprobe %1 && sudo udevadm settle")
-                                       .arg(device));
+                                   << "-c"
+                                   << QString("sudo partprobe %1 && sudo udevadm settle")
+                                          .arg(device));
     process.waitForFinished();
 
     populatePartitionTable(drive);
@@ -801,9 +801,9 @@ void Installwizard::installGrub(const QString &drive) {
 
     appendLog("Updating...");
     int update = QProcess::execute("sudo", {
-                                                "arch-chroot", "/mnt",
-                                                "pacman", "-Syu", "--noconfirm"
-                                            });
+                                               "arch-chroot", "/mnt",
+                                               "pacman", "-Syu", "--noconfirm"
+                                           });
     if (update != 0) {
         QMessageBox::critical(this, "Error", "Failed to update base system.");
         return;
