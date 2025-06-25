@@ -55,6 +55,7 @@ Installwizard::Installwizard(QWidget *parent) :
         // Disable advance until drive prep is done
         setButtonEnabled(QWizard::NextButton, false);
 
+
         // Remove "/dev/" prefix for internal processing
         prepareDrive(selectedDrive.mid(5));
     });
@@ -100,6 +101,8 @@ Installwizard::Installwizard(QWidget *parent) :
             setButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
         }
+        if (!drive.isEmpty())
+            prepareForEfi(drive);
     });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
