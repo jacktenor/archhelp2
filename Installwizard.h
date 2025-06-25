@@ -42,6 +42,8 @@ private:
     void mountISO();
     void installArchBase(const QString &selectedDrive);
     void installGrub(const QString &drive);
+
+    void setWizardButtonEnabled(QWizard::WizardButton which, bool enabled);
 };
 
 #endif // INSTALLWIZARD_H
