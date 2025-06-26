@@ -102,34 +102,14 @@ Installwizard::Installwizard(QWidget *parent) :
         if (!drive.isEmpty()) {
             setWizardButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
-    }
-
-    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
-            [this](const QString &text) {
-                if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
-                    populatePartitionTable(text.mid(5));
-    });
-      
-            setWizardButtonEnabled(QWizard::NextButton, true);
-            prepareForEfi(drive);
-
-    if (!drive.isEmpty())
-        prepareForEfi(drive);
-
-    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
-        if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
-            populatePartitionTable(text.mid(5));
-    });
-
-            setWizardButtonEnabled(QWizard::NextButton, false);
-            prepareForEfi(drive);
+        }
     });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
             [this](const QString &text) {
                 if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
                     populatePartitionTable(text.mid(5));
-     });
+            });
 }
 
 QString Installwizard::getUserHome() {
@@ -226,11 +206,6 @@ void Installwizard::setWizardButtonEnabled(QWizard::WizardButton which, bool ena
         btn->setEnabled(enabled);
 }
 
-void Installwizard::setButtonEnabled(QWizard::WizardButton which, bool enabled) {
-    if (QAbstractButton *btn = button(which))
-        btn->setEnabled(enabled);
-}
-
 void Installwizard::installDependencies() {
 
 
@@ -296,8 +271,8 @@ void Installwizard::installDependencies() {
 QStringList Installwizard::getAvailableDrives() {
     QProcess process;
 
-    // Use full path to lsblk
-    process.start("/usr/bin/lsblk", QStringList() << "-o" << "NAME,SIZE,TYPE" << "-d" << "-n");
+    // Use lsblk from PATH for better portability
+    process.start("lsblk", QStringList() << "-o" << "NAME,SIZE,TYPE" << "-d" << "-n");
     process.waitForFinished();
 
     QString output = process.readAllStandardOutput();
@@ -380,7 +355,7 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
 
 void Installwizard::unmountDrive(const QString &drive) {
     QProcess process;
-    process.start("/usr/bin/lsblk",
+    process.start("lsblk",
                   QStringList() << "-nr" << "-o" << "MOUNTPOINT" << QString("/dev/%1").arg(drive));
     process.waitForFinished();
     QStringList points = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
@@ -435,9 +410,9 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
-    process.start("/usr/bin/lsblk",
-                  QStringList() << "-r" << "-n" << "-o"
-                                << "NAME,SIZE,TYPE,MOUNTPOINT" << device);
+    process.start("lsblk",
+                  QStringList() << "-r" << "-n" << "-o" <<
+                                "NAME,SIZE,TYPE,MOUNTPOINT" << device);
     process.waitForFinished();
     QString output = process.readAllStandardOutput();
 
@@ -459,31 +434,31 @@ void Installwizard::prepareForEfi(const QString &drive) {
     efiInstall = true; // remember choice for grub
     unmountDrive(drive);
 
-    QProcess process;
     QString device = QString("/dev/%1").arg(drive);
 
+    QString partedBin = QStandardPaths::findExecutable("parted");
+    if (partedBin.isEmpty()) {
+        QMessageBox::critical(this, "Partition Error", "parted not found in PATH");
+        return;
+    }
+
     // Ensure the disk uses GPT so the ESP can be named
-    process.start("/usr/bin/lsblk", QStringList() << "-no" << "PTTYPE" << device);
-    process.waitForFinished();
-    QString type = QString(process.readAllStandardOutput()).trimmed();
+    QProcess p;
+    p.start("lsblk", {"-no", "PTTYPE", device});
+    p.waitForFinished();
+    QString type = QString(p.readAllStandardOutput()).trimmed();
     if (type != "gpt") {
-        process.start("/bin/bash",
-                      QStringList()
-                          << "-c"
-                          << QString("sudo parted %1 --script mklabel gpt").arg(device));
-        process.waitForFinished();
-        if (process.exitCode() != 0) {
-            QMessageBox::critical(this, "Partition Error",
-                                  tr("Failed to create GPT label:\n%1")
-                                      .arg(QString(process.readAllStandardError())));
+        int ret = QProcess::execute("sudo", {partedBin, device, "--script", "mklabel", "gpt"});
+        if (ret != 0) {
+            QMessageBox::critical(this, "Partition Error", tr("Failed to create GPT label."));
             return;
         }
     }
 
     // Determine next free region using parted
-    process.start("/usr/sbin/parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
-    process.waitForFinished();
-    QString out = process.readAllStandardOutput();
+    p.start(partedBin, {"-sm", device, "unit", "MiB", "print", "free"});
+    p.waitForFinished();
+    QString out = p.readAllStandardOutput();
 
     double freeStart = -1;
     int maxPart = 0;
@@ -517,34 +492,21 @@ void Installwizard::prepareForEfi(const QString &drive) {
     double bootEnd = bootStart + 512;  // 512MiB ESP
     double rootStart = bootEnd;
 
-    QStringList cmds = {
-        QString("sudo parted %1 --script mkpart primary fat32 %2MiB %3MiB")
-            .arg(device)
-            .arg(bootStart)
-            .arg(bootEnd),
-        QString("sudo parted %1 --script name %2 ESP").arg(device).arg(maxPart + 1),
-        QString("sudo parted %1 --script set %2 esp on").arg(device).arg(maxPart + 1),
-        QString("sudo parted %1 --script mkpart primary ext4 %2MiB 100%")
-            .arg(device)
-            .arg(rootStart)
-    };
+    QStringList cmd1{partedBin, device, "--script", "mkpart", "primary", "fat32", QString("%1MiB").arg(bootStart), QString("%1MiB").arg(bootEnd)};
+    QStringList cmd2{partedBin, device, "--script", "name", QString::number(maxPart + 1), "ESP"};
+    QStringList cmd3{partedBin, device, "--script", "set", QString::number(maxPart + 1), "esp", "on"};
+    QStringList cmd4{partedBin, device, "--script", "mkpart", "primary", "ext4", QString("%1MiB").arg(rootStart), "100%"};
 
-    for (const QString &cmd : cmds) {
-        process.start("/bin/bash", QStringList() << "-c" << cmd);
-        process.waitForFinished();
-        if (process.exitCode() != 0) {
-            QMessageBox::critical(this, "Partition Error",
-                                  tr("Failed to run: %1\n%2")
-                                      .arg(cmd, process.readAllStandardError()));
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4}) {
+        int ret = QProcess::execute("sudo", args);
+        if (ret != 0) {
+            QMessageBox::critical(this, "Partition Error", tr("Failed to run parted."));
             return;
         }
     }
 
-    process.start("/bin/bash", QStringList()
-                                   << "-c"
-                                   << QString("sudo partprobe %1 && sudo udevadm settle")
-                                          .arg(device));
-    process.waitForFinished();
+    QProcess::execute("sudo", {"partprobe", device});
+    QProcess::execute("sudo", {"udevadm", "settle"});
 
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
@@ -553,8 +515,9 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
 void Installwizard::mountPartitions(const QString &drive) {
     QProcess process;
-    QString bootPart = QString("/dev/%1").arg(drive + "1");
-    QString rootPart = QString("/dev/%1").arg(drive + "2");
+    QString suffix = (drive.startsWith("nvme") || drive.startsWith("mmc")) ? "p" : "";
+    QString bootPart = QString("/dev/%1%2%3").arg(drive, suffix, "1");
+    QString rootPart = QString("/dev/%1%2%3").arg(drive, suffix, "2");
 
     // 1. Mount root
     process.start("/bin/bash", { "-c",
