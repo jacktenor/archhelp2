@@ -271,8 +271,8 @@ void Installwizard::installDependencies() {
 QStringList Installwizard::getAvailableDrives() {
     QProcess process;
 
-    // Use full path to lsblk
-    process.start("/usr/bin/lsblk", QStringList() << "-o" << "NAME,SIZE,TYPE" << "-d" << "-n");
+    // Use lsblk from PATH for better portability
+    process.start("lsblk", QStringList() << "-o" << "NAME,SIZE,TYPE" << "-d" << "-n");
     process.waitForFinished();
 
     QString output = process.readAllStandardOutput();
@@ -355,7 +355,7 @@ void Installwizard::forceUnmount(const QString &mountPoint) {
 
 void Installwizard::unmountDrive(const QString &drive) {
     QProcess process;
-    process.start("/usr/bin/lsblk",
+    process.start("lsblk",
                   QStringList() << "-nr" << "-o" << "MOUNTPOINT" << QString("/dev/%1").arg(drive));
     process.waitForFinished();
     QStringList points = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
@@ -410,9 +410,9 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
-    process.start("/usr/bin/lsblk",
-                  QStringList() << "-r" << "-n" << "-o"
-                                << "NAME,SIZE,TYPE,MOUNTPOINT" << device);
+    process.start("lsblk",
+                  QStringList() << "-r" << "-n" << "-o" <<
+                                "NAME,SIZE,TYPE,MOUNTPOINT" << device);
     process.waitForFinished();
     QString output = process.readAllStandardOutput();
 
@@ -438,7 +438,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     QString device = QString("/dev/%1").arg(drive);
 
     // Ensure the disk uses GPT so the ESP can be named
-    process.start("/usr/bin/lsblk", QStringList() << "-no" << "PTTYPE" << device);
+    process.start("lsblk", QStringList() << "-no" << "PTTYPE" << device);
     process.waitForFinished();
     QString type = QString(process.readAllStandardOutput()).trimmed();
     if (type != "gpt") {
@@ -456,7 +456,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     }
 
     // Determine next free region using parted
-    process.start("/usr/sbin/parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
+    process.start("parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
     process.waitForFinished();
     QString out = process.readAllStandardOutput();
 
