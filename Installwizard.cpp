@@ -102,34 +102,14 @@ Installwizard::Installwizard(QWidget *parent) :
         if (!drive.isEmpty()) {
             setWizardButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
-    }
-
-    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
-            [this](const QString &text) {
-                if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
-                    populatePartitionTable(text.mid(5));
-    });
-      
-            setWizardButtonEnabled(QWizard::NextButton, true);
-            prepareForEfi(drive);
-
-    if (!drive.isEmpty())
-        prepareForEfi(drive);
-
-    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
-        if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
-            populatePartitionTable(text.mid(5));
-    });
-
-            setWizardButtonEnabled(QWizard::NextButton, false);
-            prepareForEfi(drive);
+        }
     });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
             [this](const QString &text) {
                 if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
                     populatePartitionTable(text.mid(5));
-     });
+            });
 }
 
 QString Installwizard::getUserHome() {
@@ -222,11 +202,6 @@ Installwizard::~Installwizard() {
 }
 
 void Installwizard::setWizardButtonEnabled(QWizard::WizardButton which, bool enabled) {
-    if (QAbstractButton *btn = button(which))
-        btn->setEnabled(enabled);
-}
-
-void Installwizard::setButtonEnabled(QWizard::WizardButton which, bool enabled) {
     if (QAbstractButton *btn = button(which))
         btn->setEnabled(enabled);
 }
