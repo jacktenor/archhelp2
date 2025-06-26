@@ -451,6 +451,21 @@ void Installwizard::prepareForEfi(const QString &drive) {
         int ret = QProcess::execute("sudo", {partedBin, device, "--script", "mklabel", "gpt"});
         if (ret != 0) {
             QMessageBox::critical(this, "Partition Error", tr("Failed to create GPT label."));
+
+    process.start("lsblk", QStringList() << "-no" << "PTTYPE" << device);
+    process.waitForFinished();
+    QString type = QString(process.readAllStandardOutput()).trimmed();
+    if (type != "gpt") {
+        process.start("/bin/bash", QStringList()
+                                       << "-c"
+                                       << QString("sudo %1 %2 --script mklabel gpt")
+                                              .arg(partedBin, device));
+        process.waitForFinished();
+        if (process.exitCode() != 0) {
+            QMessageBox::critical(this, "Partition Error",
+                                  tr("Failed to create GPT label:\n%1")
+                                      .arg(QString(process.readAllStandardError())));
+
             return;
         }
     }
@@ -459,6 +474,12 @@ void Installwizard::prepareForEfi(const QString &drive) {
     p.start(partedBin, {"-sm", device, "unit", "MiB", "print", "free"});
     p.waitForFinished();
     QString out = p.readAllStandardOutput();
+    process.start(partedBin, QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
+
+    process.start("parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
+✅ Partitions ready for EFI install.    process.waitForFinished();
+    QString out = process.readAllStandardOutput();
+
 
     double freeStart = -1;
     int maxPart = 0;
@@ -496,6 +517,17 @@ void Installwizard::prepareForEfi(const QString &drive) {
     QStringList cmd2{partedBin, device, "--script", "name", QString::number(maxPart + 1), "ESP"};
     QStringList cmd3{partedBin, device, "--script", "set", QString::number(maxPart + 1), "esp", "on"};
     QStringList cmd4{partedBin, device, "--script", "mkpart", "primary", "ext4", QString("%1MiB").arg(rootStart), "100%"};
+    QStringList cmds = {
+        QString("sudo %1 %2 --script mkpart primary fat32 %3MiB %4MiB")
+            .arg(partedBin, device)
+            .arg(bootStart)
+            .arg(bootEnd),
+        QString("sudo %1 %2 --script name %3 ESP").arg(partedBin, device).arg(maxPart + 1),
+        QString("sudo %1 %2 --script set %3 esp on").arg(partedBin, device).arg(maxPart + 1),
+        QString("sudo %1 %2 --script mkpart primary ext4 %3MiB 100%")
+            .arg(partedBin, device)
+            .arg(rootStart)
+    };
 
     for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4}) {
         int ret = QProcess::execute("sudo", args);
