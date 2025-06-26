@@ -107,6 +107,7 @@ Installwizard::Installwizard(QWidget *parent) :
     connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
         QString drive = ui->driveDropdown->currentText().mid(5);
         if (!drive.isEmpty()) {
+
             setWizardButtonEnabled(QWizard::NextButton, true);
             prepareForEfi(drive);
         }
@@ -120,6 +121,19 @@ Installwizard::Installwizard(QWidget *parent) :
         if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
             populatePartitionTable(text.mid(5));
     });
+
+            setWizardButtonEnabled(QWizard::NextButton, false);
+            setButtonEnabled(QWizard::NextButton, false);
+            prepareForEfi(drive);
+        }
+    });
+
+    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
+            [this](const QString &text) {
+                if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
+                    populatePartitionTable(text.mid(5));
+            });
+>>>>>>> b8687bcc0b1ea1178784fb50d4fb2072ee450897
 }
 
 
@@ -213,6 +227,11 @@ Installwizard::~Installwizard() {
 }
 
 void Installwizard::setWizardButtonEnabled(QWizard::WizardButton which, bool enabled) {
+    if (QAbstractButton *btn = button(which))
+        btn->setEnabled(enabled);
+}
+
+void Installwizard::setButtonEnabled(QWizard::WizardButton which, bool enabled) {
     if (QAbstractButton *btn = button(which))
         btn->setEnabled(enabled);
 }
@@ -455,6 +474,24 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
+
+    // Ensure the disk uses GPT so the ESP can be named
+    process.start("/usr/bin/lsblk", QStringList() << "-no" << "PTTYPE" << device);
+    process.waitForFinished();
+    QString type = QString(process.readAllStandardOutput()).trimmed();
+    if (type != "gpt") {
+        process.start("/bin/bash",
+                      QStringList()
+                          << "-c"
+                          << QString("sudo parted %1 --script mklabel gpt").arg(device));
+        process.waitForFinished();
+        if (process.exitCode() != 0) {
+            QMessageBox::critical(this, "Partition Error",
+                                  tr("Failed to create GPT label:\n%1")
+                                      .arg(QString(process.readAllStandardError())));
+            return;
+        }
+    }
 
     // Determine next free region using parted
     process.start("/usr/sbin/parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
