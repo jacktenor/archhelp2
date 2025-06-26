@@ -463,7 +463,9 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
     // Determine next free region using parted
     process.start(partedBin, QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
-    process.waitForFinished();
+
+    process.start("parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
+✅ Partitions ready for EFI install.    process.waitForFinished();
     QString out = process.readAllStandardOutput();
 
     double freeStart = -1;
