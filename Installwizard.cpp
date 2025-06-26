@@ -107,15 +107,16 @@ Installwizard::Installwizard(QWidget *parent) :
             setWizardButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
         }
-    });
+
       
             setWizardButtonEnabled(QWizard::NextButton, true);
             prepareForEfi(drive);
-        }
+
 
 
     if (!drive.isEmpty())
         prepareForEfi(drive);
+
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
@@ -657,6 +658,8 @@ void Installwizard::mountISO() {
 
 void Installwizard::installArchBase(const QString &selectedDrive) {
 
+    QProcess process;
+
     // Ensure /etc/resolv.conf exists in chroot
     QProcess::execute("sudo", {"rm", "-f", "/mnt/etc/resolv.conf"});
     QProcess::execute("sudo", {"cp", "/etc/resolv.conf", "/mnt/etc/resolv.conf"});
@@ -752,8 +755,7 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
                                              });
     if (fstabRet != 0) {
         QMessageBox::warning(this, "Warning", "Failed to regenerate /etc/fstab.");
-    }    process.waitForFinished();Failed to; run: sudo parted /dev/sdb --script mkpart primary ext4 513.02MiB 51200MiB
-
+    }    process.waitForFinished();
 
     QProcess::execute("sudo", {"arch-chroot", "/mnt", "mkinitcpio", "-P"});
 
