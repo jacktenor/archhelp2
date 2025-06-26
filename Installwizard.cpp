@@ -103,6 +103,14 @@ Installwizard::Installwizard(QWidget *parent) :
             setWizardButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
         }
+    });
+
+    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
+            [this](const QString &text) {
+                if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
+                    populatePartitionTable(text.mid(5));
+            });
+}
       
             setWizardButtonEnabled(QWizard::NextButton, true);
             prepareForEfi(drive);
@@ -216,6 +224,11 @@ Installwizard::~Installwizard() {
 }
 
 void Installwizard::setWizardButtonEnabled(QWizard::WizardButton which, bool enabled) {
+    if (QAbstractButton *btn = button(which))
+        btn->setEnabled(enabled);
+}
+
+void Installwizard::setButtonEnabled(QWizard::WizardButton which, bool enabled) {
     if (QAbstractButton *btn = button(which))
         btn->setEnabled(enabled);
 }
@@ -409,6 +422,7 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::installComplete, this, [this]() {
         appendLog("\xE2\x9C\x85 Drive preparation complete.");
         setWizardButtonEnabled(QWizard::NextButton, true);
+
     });
 
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
@@ -473,7 +487,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     process.waitForFinished();
     QString out = process.readAllStandardOutput();
 
-    double freeStart = -1, freeEnd = -1;
+    double freeStart = -1;
     int maxPart = 0;
     for (const QString &line : out.split('\n', Qt::SkipEmptyParts)) {
         QString trimmed = line.trimmed();
@@ -491,7 +505,6 @@ void Installwizard::prepareForEfi(const QString &drive) {
             double end = cols[2].remove(QRegularExpression("[^0-9.]")).toDouble();
             if (end - start > 1000) { // choose space >1GiB
                 freeStart = start;
-                freeEnd = end;
                 break;
             }
         }
@@ -502,16 +515,20 @@ void Installwizard::prepareForEfi(const QString &drive) {
         return;
     }
 
-    double bootStart = freeStart + 1;          // align
-    double bootEnd = bootStart + 512;           // 512MiB ESP
+    double bootStart = freeStart + 1;  // align
+    double bootEnd = bootStart + 512;  // 512MiB ESP
     double rootStart = bootEnd;
-    double rootEnd = freeEnd;
 
     QStringList cmds = {
-        QString("sudo parted %1 --script mkpart primary fat32 %2MiB %3MiB").arg(device).arg(bootStart).arg(bootEnd),
+        QString("sudo parted %1 --script mkpart primary fat32 %2MiB %3MiB")
+            .arg(device)
+            .arg(bootStart)
+            .arg(bootEnd),
         QString("sudo parted %1 --script name %2 ESP").arg(device).arg(maxPart + 1),
         QString("sudo parted %1 --script set %2 esp on").arg(device).arg(maxPart + 1),
-        QString("sudo parted %1 --script mkpart primary ext4 %2MiB %3MiB").arg(device).arg(rootStart).arg(rootEnd)
+        QString("sudo parted %1 --script mkpart primary ext4 %2MiB 100%")
+            .arg(device)
+            .arg(rootStart)
     };
 
     for (const QString &cmd : cmds) {
