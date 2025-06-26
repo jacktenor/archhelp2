@@ -20,9 +20,11 @@ the final page.
 1. **Download ISO** – press the *Download* button and wait for the progress
    bar to complete.
 2. **Prepare Drive** – select the target disk and click *Prepare Drive*.
-3. **Create Default Partitions** – optional helper for creating a simple
-   layout.
-4. **Continue through the wizard** – follow the prompts to mount the ISO and
+3. **Prepare for EFI** – use this if you want UEFI boot. It converts the
+   drive to GPT and creates an EFI System Partition plus a root partition.
+4. **Create Default Partitions** – optional helper for creating a simple
+   layout (legacy BIOS mode).
+5. **Continue through the wizard** – follow the prompts to mount the ISO and
    install the base system.
 
 Make absolutely sure you selected the correct drive – the installer will wipe
