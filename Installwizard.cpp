@@ -25,10 +25,8 @@ Installwizard::Installwizard(QWidget *parent) :
     setWindowTitle("Arch Linux Installer");
 
     // Initially disable navigation buttons until each page completes its work
-    setWizardButtonEnabled(QWizard::NextButton, false);
+    //setWizardButtonEnabled(QWizard::NextButton, false);
     setWizardButtonEnabled(QWizard::FinishButton, false);
-    setButtonEnabled(QWizard::NextButton, false);
-    setButtonEnabled(QWizard::FinishButton, false);
 
     // Connect refreshButton to populate drives
     connect(ui->partRefreshButton, &QPushButton::clicked, this, &Installwizard::populateDrives);
@@ -55,10 +53,7 @@ Installwizard::Installwizard(QWidget *parent) :
         efiInstall = false; // legacy mode
 
         // Disable advance until drive prep is done
-        setWizardButtonEnabled(QWizard::NextButton, false);
-
-        setButtonEnabled(QWizard::NextButton, false);
-
+     setWizardButtonEnabled(QWizard::NextButton, true);
 
         // Remove "/dev/" prefix for internal processing
         prepareDrive(selectedDrive.mid(5));
@@ -69,9 +64,8 @@ Installwizard::Installwizard(QWidget *parent) :
 
     // Inside Installwizard constructor
     connect(ui->downloadButton, &QPushButton::clicked, this, [=]() {
-        setWizardButtonEnabled(QWizard::NextButton, false);
+        setWizardButtonEnabled(QWizard::NextButton, true);
 
-        setButtonEnabled(QWizard::NextButton, false);
         downloadISO(ui->progressBar);  // Pass the progress bar to show download progress
     });
 
@@ -80,16 +74,16 @@ Installwizard::Installwizard(QWidget *parent) :
 
     connect(this, &QWizard::currentIdChanged, this, [this](int id) {
         if (id == 0) {
-            setWizardButtonEnabled(QWizard::NextButton, false);
+            setWizardButtonEnabled(QWizard::NextButton, true);
         } else if (id == 1) {
             setWizardButtonEnabled(QWizard::NextButton, false);
-            setButtonEnabled(QWizard::NextButton, false);
+
             QString drive = ui->driveDropdown->currentText().mid(5);
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         } else if (id == 2) {
             setWizardButtonEnabled(QWizard::FinishButton, false);
-            setButtonEnabled(QWizard::FinishButton, false);
+
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
                     "GNOME", "KDE Plasma", "XFCE", "LXQt", "Cinnamon", "MATE", "i3"
@@ -107,7 +101,6 @@ Installwizard::Installwizard(QWidget *parent) :
         QString drive = ui->driveDropdown->currentText().mid(5);
         if (!drive.isEmpty()) {
             setWizardButtonEnabled(QWizard::NextButton, false);
-            setButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
         }
     });
@@ -118,7 +111,28 @@ Installwizard::Installwizard(QWidget *parent) :
                     populatePartitionTable(text.mid(5));
             });
 }
+      
+            setWizardButtonEnabled(QWizard::NextButton, true);
+            prepareForEfi(drive);
 
+    if (!drive.isEmpty())
+        prepareForEfi(drive);
+
+    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
+        if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
+            populatePartitionTable(text.mid(5));
+    });
+
+            setWizardButtonEnabled(QWizard::NextButton, false);
+            prepareForEfi(drive);
+    });
+
+    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
+            [this](const QString &text) {
+                if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
+                    populatePartitionTable(text.mid(5));
+     });
+}
 
 QString Installwizard::getUserHome() {
     QString userHome;
@@ -277,7 +291,6 @@ void Installwizard::installDependencies() {
 
     // Allow user to advance to partitioning page
     setWizardButtonEnabled(QWizard::NextButton, true);
-    setButtonEnabled(QWizard::NextButton, true);
 
     getAvailableDrives();
 }
@@ -404,12 +417,14 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::errorOccurred, this, [this](const QString &msg) {
         QMessageBox::critical(this, "Error", msg);
     });
+  
     connect(worker, &InstallerWorker::installComplete, thread, &QThread::quit);
     connect(worker, &InstallerWorker::installComplete, this, [this]() {
         appendLog("\xE2\x9C\x85 Drive preparation complete.");
         setWizardButtonEnabled(QWizard::NextButton, true);
-        setButtonEnabled(QWizard::NextButton, true);
+
     });
+
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
@@ -419,8 +434,6 @@ void Installwizard::prepareDrive(const QString &drive) {
 void Installwizard::populatePartitionTable(const QString &drive) {
     if (drive.isEmpty())
         return;
-
-    //ui->driveLabel->setText(tr("Drive: /dev/%1").arg(drive));
 
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
@@ -538,7 +551,6 @@ void Installwizard::prepareForEfi(const QString &drive) {
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
     setWizardButtonEnabled(QWizard::NextButton, true);
-    setButtonEnabled(QWizard::NextButton, true);
 }
 
 void Installwizard::mountPartitions(const QString &drive) {
@@ -645,6 +657,8 @@ void Installwizard::mountISO() {
 
 void Installwizard::installArchBase(const QString &selectedDrive) {
 
+    QProcess process;
+
     // Ensure /etc/resolv.conf exists in chroot
     QProcess::execute("sudo", {"rm", "-f", "/mnt/etc/resolv.conf"});
     QProcess::execute("sudo", {"cp", "/etc/resolv.conf", "/mnt/etc/resolv.conf"});
@@ -740,7 +754,7 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
                                              });
     if (fstabRet != 0) {
         QMessageBox::warning(this, "Warning", "Failed to regenerate /etc/fstab.");
-    }
+    }    process.waitForFinished();
 
     QProcess::execute("sudo", {"arch-chroot", "/mnt", "mkinitcpio", "-P"});
 
@@ -860,7 +874,6 @@ void Installwizard::on_installButton_clicked() {
     // Prevent finishing until the background install completes
     setWizardButtonEnabled(QWizard::FinishButton, false);
 
-    setButtonEnabled(QWizard::FinishButton, false);
 
     QThread *thread = new QThread;
     worker->moveToThread(thread);
@@ -876,7 +889,6 @@ void Installwizard::on_installButton_clicked() {
     connect(worker, &SystemWorker::finished, this, [this]() {
         appendLog("\xE2\x9C\x85 Installation complete.");
         setWizardButtonEnabled(QWizard::FinishButton, true);
-        setButtonEnabled(QWizard::FinishButton, true);
         QMessageBox::information(this, "Complete", "System installation finished.");
     });
     connect(worker, &SystemWorker::finished, thread, &QThread::quit);
