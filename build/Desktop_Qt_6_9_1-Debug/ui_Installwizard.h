@@ -75,7 +75,6 @@ public:
         QFont font;
         font.setFamilies({QString::fromUtf8("Noto Sans")});
         font.setPointSize(12);
-        font.setWeight(QFont::DemiBold);
         font.setItalic(false);
         label->setFont(font);
         label->setStyleSheet(QString::fromUtf8("font: 600 12pt \"Noto Sans\";"));
