@@ -2,6 +2,7 @@
 #include <QProcess>
 #include <QThread>
 #include <QFile>
+#include <QStandardPaths>
 
 InstallerWorker::InstallerWorker(QObject *parent) : QObject(parent) {}
 
@@ -40,6 +41,16 @@ void InstallerWorker::run() {
 
     // Partition
     emit logMessage("Creating new partition table...");
+    QStringList cmd1{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mklabel", "msdos"};
+    QStringList cmd2{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mkpart", "primary", "ext4", "1MiB", "513MiB"};
+    QStringList cmd3{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "set", "1", "boot", "on"};
+    QStringList cmd4{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mkpart", "primary", "ext4", "513MiB", "100%"};
+
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4}) {
+        int ret = QProcess::execute("sudo", args);
+        if (ret != 0) {
+            emit errorOccurred("Partition command failed");
+
     QStringList cmds = {
         // Legacy BIOS layout: 512MiB boot partition + remainder root
         QString("sudo %1 /dev/%2 --script mklabel msdos").arg(partedBin, selectedDrive),
@@ -62,29 +73,18 @@ void InstallerWorker::run() {
 
     // Refresh table
     emit logMessage("Refreshing partition table...");
-    process.start("/bin/bash", {
-        "-c",
-        QString("sudo partprobe /dev/%1 && sudo udevadm settle").arg(selectedDrive)
-    });
-    process.waitForFinished();
+    QProcess::execute("sudo", {"partprobe", QString("/dev/%1").arg(selectedDrive)});
+    QProcess::execute("sudo", {"udevadm", "settle"});
 
     // Format partitions
     emit logMessage("Formatting boot partition " + bootPart + " as ext4...");
-    process.start("/bin/bash", {
-        "-c", QString("sudo mkfs.ext4 -F %1").arg(bootPart)
-    });
-    process.waitForFinished();
-    if (process.exitCode() != 0) {
+    if (QProcess::execute("sudo", {"mkfs.ext4", "-F", bootPart}) != 0) {
         emit errorOccurred("Format failed.");
         return;
     }
 
     emit logMessage("Formatting partition " + rootPart + " as ext4...");
-    process.start("/bin/bash", {
-        "-c", QString("sudo mkfs.ext4 -F %1").arg(rootPart)
-    });
-    process.waitForFinished();
-    if (process.exitCode() != 0) {
+    if (QProcess::execute("sudo", {"mkfs.ext4", "-F", rootPart}) != 0) {
         emit errorOccurred("Format failed.");
         return;
     }
