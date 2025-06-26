@@ -27,13 +27,6 @@ Installwizard::Installwizard(QWidget *parent) :
     // Initially disable navigation buttons until each page completes its work
     setWizardButtonEnabled(QWizard::NextButton, false);
     setWizardButtonEnabled(QWizard::FinishButton, false);
-
-
-
-    setWizardButtonEnabled(QWizard::NextButton, false);
-    setWizardButtonEnabled(QWizard::FinishButton, false);
-
-
     setButtonEnabled(QWizard::NextButton, false);
     setButtonEnabled(QWizard::FinishButton, false);
 
@@ -90,19 +83,12 @@ Installwizard::Installwizard(QWidget *parent) :
             setWizardButtonEnabled(QWizard::NextButton, false);
         } else if (id == 1) {
             setWizardButtonEnabled(QWizard::NextButton, false);
-
-
-
-            setButtonEnabled(QWizard::NextButton, false);
-        } else if (id == 1) {
             setButtonEnabled(QWizard::NextButton, false);
             QString drive = ui->driveDropdown->currentText().mid(5);
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         } else if (id == 2) {
             setWizardButtonEnabled(QWizard::FinishButton, false);
-
-
             setButtonEnabled(QWizard::FinishButton, false);
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
@@ -121,27 +107,16 @@ Installwizard::Installwizard(QWidget *parent) :
         QString drive = ui->driveDropdown->currentText().mid(5);
         if (!drive.isEmpty()) {
             setWizardButtonEnabled(QWizard::NextButton, false);
+            setButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
         }
     });
 
-
-            setWizardButtonEnabled(QWizard::NextButton, false);
-            prepareForEfi(drive);
-        }
-
-        setButtonEnabled(QWizard::NextButton, false);
-        prepareForEfi(drive);
-
-
-    if (!drive.isEmpty())
-        prepareForEfi(drive);
-  });
-
-    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
-        if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
-            populatePartitionTable(text.mid(5));
-    });
+    connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
+            [this](const QString &text) {
+                if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
+                    populatePartitionTable(text.mid(5));
+            });
 }
 
 
@@ -239,6 +214,11 @@ void Installwizard::setWizardButtonEnabled(QWizard::WizardButton which, bool ena
         btn->setEnabled(enabled);
 }
 
+void Installwizard::setButtonEnabled(QWizard::WizardButton which, bool enabled) {
+    if (QAbstractButton *btn = button(which))
+        btn->setEnabled(enabled);
+}
+
 void Installwizard::installDependencies() {
 
 
@@ -297,11 +277,6 @@ void Installwizard::installDependencies() {
 
     // Allow user to advance to partitioning page
     setWizardButtonEnabled(QWizard::NextButton, true);
-
-
-
-    setWizardButtonEnabled(QWizard::NextButton, true);
-
     setButtonEnabled(QWizard::NextButton, true);
 
     getAvailableDrives();
@@ -433,11 +408,6 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::installComplete, this, [this]() {
         appendLog("\xE2\x9C\x85 Drive preparation complete.");
         setWizardButtonEnabled(QWizard::NextButton, true);
-
-
-        setWizardButtonEnabled(QWizard::NextButton, true);
-
-
         setButtonEnabled(QWizard::NextButton, true);
     });
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
@@ -481,6 +451,24 @@ void Installwizard::prepareForEfi(const QString &drive) {
     QProcess process;
     QString device = QString("/dev/%1").arg(drive);
 
+    // Ensure the disk uses GPT so the ESP can be named
+    process.start("/usr/bin/lsblk", QStringList() << "-no" << "PTTYPE" << device);
+    process.waitForFinished();
+    QString type = QString(process.readAllStandardOutput()).trimmed();
+    if (type != "gpt") {
+        process.start("/bin/bash",
+                      QStringList()
+                          << "-c"
+                          << QString("sudo parted %1 --script mklabel gpt").arg(device));
+        process.waitForFinished();
+        if (process.exitCode() != 0) {
+            QMessageBox::critical(this, "Partition Error",
+                                  tr("Failed to create GPT label:\n%1")
+                                      .arg(QString(process.readAllStandardError())));
+            return;
+        }
+    }
+
     // Determine next free region using parted
     process.start("/usr/sbin/parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
     process.waitForFinished();
@@ -496,7 +484,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
         bool ok = false;
         int num = cols[0].toInt(&ok);
-        if (ok)
+        if (ok && !trimmed.contains("free", Qt::CaseInsensitive))
             maxPart = std::max(maxPart, num);
 
         if (trimmed.contains("free", Qt::CaseInsensitive) && cols.size() >= 3) {
@@ -547,11 +535,6 @@ void Installwizard::prepareForEfi(const QString &drive) {
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
     setWizardButtonEnabled(QWizard::NextButton, true);
-
-
-    setWizardButtonEnabled(QWizard::NextButton, true);
-
-
     setButtonEnabled(QWizard::NextButton, true);
 }
 
