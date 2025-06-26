@@ -521,7 +521,8 @@ void Installwizard::prepareForEfi(const QString &drive) {
     double rootEnd = freeEnd;
 
     QStringList cmds = {
-        QString("sudo parted %1 --script mkpart ESP fat32 %2MiB %3MiB").arg(device).arg(bootStart).arg(bootEnd),
+        QString("sudo parted %1 --script mkpart primary fat32 %2MiB %3MiB").arg(device).arg(bootStart).arg(bootEnd),
+        QString("sudo parted %1 --script name %2 ESP").arg(device).arg(maxPart + 1),
         QString("sudo parted %1 --script set %2 esp on").arg(device).arg(maxPart + 1),
         QString("sudo parted %1 --script mkpart primary ext4 %2MiB %3MiB").arg(device).arg(rootStart).arg(rootEnd)
     };
