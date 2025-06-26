@@ -78,6 +78,8 @@ Installwizard::Installwizard(QWidget *parent) :
         if (id == 0) {
             setWizardButtonEnabled(QWizard::NextButton, true);
         } else if (id == 1) {
+            setWizardButtonEnabled(QWizard::NextButton, false);
+
             setWizardButtonEnabled(QWizard::NextButton, true);
 
             setWizardButtonEnabled(QWizard::NextButton, false);
@@ -86,9 +88,6 @@ Installwizard::Installwizard(QWidget *parent) :
                 populatePartitionTable(drive);
         } else if (id == 2) {
             setWizardButtonEnabled(QWizard::FinishButton, false);
-
-
-            setButtonEnabled(QWizard::FinishButton, false);
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
                     "GNOME", "KDE Plasma", "XFCE", "LXQt", "Cinnamon", "MATE", "i3"
@@ -105,7 +104,11 @@ Installwizard::Installwizard(QWidget *parent) :
     connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
         QString drive = ui->driveDropdown->currentText().mid(5);
         if (!drive.isEmpty()) {
-
+            setWizardButtonEnabled(QWizard::NextButton, false);
+            prepareForEfi(drive);
+        }
+    });
+      
             setWizardButtonEnabled(QWizard::NextButton, true);
             prepareForEfi(drive);
         }
@@ -120,9 +123,9 @@ Installwizard::Installwizard(QWidget *parent) :
     });
 
             setWizardButtonEnabled(QWizard::NextButton, false);
-            setButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
     });
+
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
             [this](const QString &text) {
@@ -289,6 +292,7 @@ void Installwizard::installDependencies() {
 
     // Allow user to advance to partitioning page
     setWizardButtonEnabled(QWizard::NextButton, true);
+
 
     getAvailableDrives();
 }
@@ -546,6 +550,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
     setWizardButtonEnabled(QWizard::NextButton, true);
+    setButtonEnabled(QWizard::NextButton, true);
 }
 
 void Installwizard::mountPartitions(const QString &drive) {
@@ -747,7 +752,8 @@ void Installwizard::installArchBase(const QString &selectedDrive) {
                                              });
     if (fstabRet != 0) {
         QMessageBox::warning(this, "Warning", "Failed to regenerate /etc/fstab.");
-    }
+    }    process.waitForFinished();Failed to; run: sudo parted /dev/sdb --script mkpart primary ext4 513.02MiB 51200MiB
+
 
     QProcess::execute("sudo", {"arch-chroot", "/mnt", "mkinitcpio", "-P"});
 
