@@ -115,7 +115,6 @@ Installwizard::Installwizard(QWidget *parent) :
 
     if (!drive.isEmpty())
         prepareForEfi(drive);
-  });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
@@ -125,7 +124,6 @@ Installwizard::Installwizard(QWidget *parent) :
             setWizardButtonEnabled(QWizard::NextButton, false);
             setButtonEnabled(QWizard::NextButton, false);
             prepareForEfi(drive);
-        }
     });
 
     connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
@@ -133,7 +131,6 @@ Installwizard::Installwizard(QWidget *parent) :
                 if (currentId() == 1 && !text.isEmpty() && text != "No drives found")
                     populatePartitionTable(text.mid(5));
             });
->>>>>>> b8687bcc0b1ea1178784fb50d4fb2072ee450897
 }
 
 
