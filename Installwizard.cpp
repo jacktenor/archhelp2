@@ -27,13 +27,6 @@ Installwizard::Installwizard(QWidget *parent) :
     // Initially disable navigation buttons until each page completes its work
     setWizardButtonEnabled(QWizard::NextButton, false);
     setWizardButtonEnabled(QWizard::FinishButton, false);
-
-
-
-    setWizardButtonEnabled(QWizard::NextButton, false);
-    setWizardButtonEnabled(QWizard::FinishButton, false);
-
-
     setButtonEnabled(QWizard::NextButton, false);
     setButtonEnabled(QWizard::FinishButton, false);
 
@@ -90,19 +83,12 @@ Installwizard::Installwizard(QWidget *parent) :
             setWizardButtonEnabled(QWizard::NextButton, false);
         } else if (id == 1) {
             setWizardButtonEnabled(QWizard::NextButton, false);
-
-
-
-            setButtonEnabled(QWizard::NextButton, false);
-        } else if (id == 1) {
             setButtonEnabled(QWizard::NextButton, false);
             QString drive = ui->driveDropdown->currentText().mid(5);
             if (!drive.isEmpty())
                 populatePartitionTable(drive);
         } else if (id == 2) {
             setWizardButtonEnabled(QWizard::FinishButton, false);
-
-
             setButtonEnabled(QWizard::FinishButton, false);
             if (ui->comboDesktopEnvironment->count() == 0) {
                 ui->comboDesktopEnvironment->addItems({
@@ -291,11 +277,6 @@ void Installwizard::installDependencies() {
 
     // Allow user to advance to partitioning page
     setWizardButtonEnabled(QWizard::NextButton, true);
-
-
-
-    setWizardButtonEnabled(QWizard::NextButton, true);
-
     setButtonEnabled(QWizard::NextButton, true);
 
     getAvailableDrives();
@@ -427,11 +408,6 @@ void Installwizard::prepareDrive(const QString &drive) {
     connect(worker, &InstallerWorker::installComplete, this, [this]() {
         appendLog("\xE2\x9C\x85 Drive preparation complete.");
         setWizardButtonEnabled(QWizard::NextButton, true);
-
-
-        setWizardButtonEnabled(QWizard::NextButton, true);
-
-
         setButtonEnabled(QWizard::NextButton, true);
     });
     connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
@@ -508,7 +484,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
         bool ok = false;
         int num = cols[0].toInt(&ok);
-        if (ok)
+        if (ok && !trimmed.contains("free", Qt::CaseInsensitive))
             maxPart = std::max(maxPart, num);
 
         if (trimmed.contains("free", Qt::CaseInsensitive) && cols.size() >= 3) {
@@ -559,11 +535,6 @@ void Installwizard::prepareForEfi(const QString &drive) {
     populatePartitionTable(drive);
     appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
     setWizardButtonEnabled(QWizard::NextButton, true);
-
-
-    setWizardButtonEnabled(QWizard::NextButton, true);
-
-
     setButtonEnabled(QWizard::NextButton, true);
 }
 
