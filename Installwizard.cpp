@@ -452,6 +452,11 @@ void Installwizard::prepareForEfi(const QString &drive) {
         if (ret != 0) {
             QMessageBox::critical(this, "Partition Error", tr("Failed to create GPT label."));
 
+    if (type != "gpt") {
+        int ret = QProcess::execute("sudo", {partedBin, device, "--script", "mklabel", "gpt"});
+        if (ret != 0) {
+            QMessageBox::critical(this, "Partition Error", tr("Failed to create GPT label."));
+
     process.start("lsblk", QStringList() << "-no" << "PTTYPE" << device);
     process.waitForFinished();
     QString type = QString(process.readAllStandardOutput()).trimmed();
@@ -517,6 +522,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     QStringList cmd2{partedBin, device, "--script", "name", QString::number(maxPart + 1), "ESP"};
     QStringList cmd3{partedBin, device, "--script", "set", QString::number(maxPart + 1), "esp", "on"};
     QStringList cmd4{partedBin, device, "--script", "mkpart", "primary", "ext4", QString("%1MiB").arg(rootStart), "100%"};
+
     QStringList cmds = {
         QString("sudo %1 %2 --script mkpart primary fat32 %3MiB %4MiB")
             .arg(partedBin, device)
