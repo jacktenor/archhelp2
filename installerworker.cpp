@@ -62,6 +62,54 @@ void InstallerWorker::run() {
     if (QProcess::execute("sudo", args) != 0) {
         emit errorOccurred("Partition command failed");
         return;
+
+    emit logMessage("Creating new partition table...");
+    QStringList args{partedBin, QString("/dev/%1").arg(selectedDrive), "--script",
+                     "mklabel", "msdos",
+                     "mkpart", "primary", "ext4", "1MiB", "513MiB",
+                     "set", "1", "boot", "on",
+                     "mkpart", "primary", "ext4", "513MiB", "100%"};
+    if (QProcess::execute("sudo", args) != 0) {
+        emit errorOccurred("Partition command failed");
+        return;
+
+    QString partedBin = QStandardPaths::findExecutable("parted");
+    if (partedBin.isEmpty()) {
+        emit errorOccurred("parted not found in PATH");
+        return;
+    }
+
+    // Partition
+    emit logMessage("Creating new partition table...");
+    QStringList cmd1{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mklabel", "msdos"};
+    QStringList cmd2{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mkpart", "primary", "ext4", "1MiB", "513MiB"};
+    QStringList cmd3{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "set", "1", "boot", "on"};
+    QStringList cmd4{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mkpart", "primary", "ext4", "513MiB", "100%"};
+
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4}) {
+        int ret = QProcess::execute("sudo", args);
+        if (ret != 0) {
+            emit errorOccurred("Partition command failed");
+
+
+    QStringList cmds = {
+        // Legacy BIOS layout: 512MiB boot partition + remainder root
+        QString("sudo %1 /dev/%2 --script mklabel msdos").arg(partedBin, selectedDrive),
+        QString("sudo %1 /dev/%2 --script mkpart primary ext4 1MiB 513MiB").arg(partedBin, selectedDrive),
+        QString("sudo %1 /dev/%2 --script set 1 boot on").arg(partedBin, selectedDrive),
+        QString("sudo %1 /dev/%2 --script mkpart primary ext4 513MiB 100%").arg(partedBin, selectedDrive)
+    };
+    for (const QString &cmd : cmds) {
+        process.start("/bin/bash", {"-c", cmd});
+        process.waitForFinished(-1);
+        QString stdOut = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+        QString errOut = QString::fromUtf8(process.readAllStandardError()).trimmed();
+        if (!stdOut.isEmpty())
+            emit logMessage(stdOut);
+        if (process.exitCode() != 0) {
+            emit errorOccurred(QString("Partition error: %1\n%2").arg(cmd, errOut));
+            return;
+        }
     }
 
     // Refresh table
