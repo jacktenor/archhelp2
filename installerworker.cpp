@@ -3,6 +3,20 @@
 #include <QThread>
 #include <QFile>
 #include <QStandardPaths>
+#include <QFileInfo>
+
+static QString locatePartedBinary()
+{
+    QString p = QStandardPaths::findExecutable("parted");
+    if (!p.isEmpty())
+        return p;
+    const QStringList fallbacks{"/usr/sbin/parted", "/sbin/parted"};
+    for (const QString &path : fallbacks)
+        if (QFileInfo::exists(path))
+            return path;
+    return QString();
+}
+
 
 InstallerWorker::InstallerWorker(QObject *parent) : QObject(parent) {}
 
@@ -33,6 +47,10 @@ void InstallerWorker::run() {
         process.waitForFinished();
     }
 
+    QString partedBin = locatePartedBinary();
+    if (partedBin.isEmpty()) {
+        emit errorOccurred("parted not found");
+
     QString partedBin = QStandardPaths::findExecutable("parted");
     if (partedBin.isEmpty()) {
         emit errorOccurred("parted not found in PATH");
@@ -50,6 +68,7 @@ void InstallerWorker::run() {
         int ret = QProcess::execute("sudo", args);
         if (ret != 0) {
             emit errorOccurred("Partition command failed");
+
 
     QStringList cmds = {
         // Legacy BIOS layout: 512MiB boot partition + remainder root

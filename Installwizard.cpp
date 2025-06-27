@@ -16,6 +16,7 @@
 #include <QThread>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <QFileInfo>
 #include <algorithm>
 
 Installwizard::Installwizard(QWidget *parent) :
@@ -137,6 +138,18 @@ QString Installwizard::getUserHome() {
         userHome = QDir::homePath();
 
     return userHome;
+}
+
+static QString locatePartedBinary()
+{
+    QString p = QStandardPaths::findExecutable("parted");
+    if (!p.isEmpty())
+        return p;
+    const QStringList fallbacks{"/usr/sbin/parted", "/sbin/parted"};
+    for (const QString &path : fallbacks)
+        if (QFileInfo::exists(path))
+            return path;
+    return QString();
 }
 
 void Installwizard::downloadISO(QProgressBar *progressBar) {
@@ -436,6 +449,21 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
     QString device = QString("/dev/%1").arg(drive);
 
+    QString partedBin = locatePartedBinary();
+    if (partedBin.isEmpty()) {
+        QMessageBox::critical(this, "Partition Error", "parted not found");
+        return;
+    }
+
+    // Create partitions similar to legacy routine but using GPT and FAT32 ESP
+    QStringList cmd1{partedBin, device, "--script", "mklabel", "gpt"};
+    QStringList cmd2{partedBin, device, "--script", "mkpart", "primary", "fat32", "1MiB", "513MiB"};
+    QStringList cmd3{partedBin, device, "--script", "name", "1", "ESP"};
+    QStringList cmd4{partedBin, device, "--script", "set", "1", "esp", "on"};
+    QStringList cmd5{partedBin, device, "--script", "mkpart", "primary", "ext4", "513MiB", "100%"};
+
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4, cmd5}) {
+        if (QProcess::execute("sudo", args) != 0) {
     QString partedBin = QStandardPaths::findExecutable("parted");
     if (partedBin.isEmpty()) {
         QMessageBox::critical(this, "Partition Error", "parted not found in PATH");
