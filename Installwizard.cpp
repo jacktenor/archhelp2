@@ -459,6 +459,8 @@ void Installwizard::prepareForEfi(const QString &drive) {
 }
 
 void Installwizard::on_installButton_clicked() {
+
+
   QString username = ui->lineEditUsername->text().trimmed();
   QString password = ui->lineEditPassword->text();
   QString passwordAgain = ui->lineEditPasswordAgain->text();
