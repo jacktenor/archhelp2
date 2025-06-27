@@ -17,7 +17,6 @@ static QString locatePartedBinary()
     return QString();
 }
 
-
 InstallerWorker::InstallerWorker(QObject *parent) : QObject(parent) {}
 
 void InstallerWorker::setDrive(const QString &drive) {
@@ -50,6 +49,19 @@ void InstallerWorker::run() {
     QString partedBin = locatePartedBinary();
     if (partedBin.isEmpty()) {
         emit errorOccurred("parted not found");
+        return;
+    }
+
+    // Partition the drive in one go to avoid kernel race conditions
+    emit logMessage("Creating new partition table...");
+    QStringList args{partedBin, QString("/dev/%1").arg(selectedDrive), "--script",
+                     "mklabel", "msdos",
+                     "mkpart", "primary", "ext4", "1MiB", "513MiB",
+                     "set", "1", "boot", "on",
+                     "mkpart", "primary", "ext4", "513MiB", "100%"};
+    if (QProcess::execute("sudo", args) != 0) {
+        emit errorOccurred("Partition command failed");
+        return;
 
     QString partedBin = QStandardPaths::findExecutable("parted");
     if (partedBin.isEmpty()) {

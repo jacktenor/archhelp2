@@ -452,6 +452,21 @@ void Installwizard::prepareForEfi(const QString &drive) {
     QString partedBin = locatePartedBinary();
     if (partedBin.isEmpty()) {
         QMessageBox::critical(this, "Partition Error", "parted not found");
+
+        return;
+    }
+
+    // Run all partition commands in a single parted invocation so the kernel
+    // sees the new table before we name and flag the ESP
+    QStringList args{partedBin, device, "--script",
+                     "mklabel", "gpt",
+                     "mkpart", "primary", "fat32", "1MiB", "513MiB",
+                     "name", "1", "ESP",
+                     "set", "1", "esp", "on",
+                     "mkpart", "primary", "ext4", "513MiB", "100%"};
+    if (QProcess::execute("sudo", args) != 0) {
+        QMessageBox::critical(this, "Partition Error",
+                              tr("Failed to run parted."));
         return;
     }
 
@@ -523,7 +538,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     process.start(partedBin, QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
 
     process.start("parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
-✅ Partitions ready for EFI install.    process.waitForFinished();
+    process.waitForFinished();
     QString out = process.readAllStandardOutput();
 
 
