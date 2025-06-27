@@ -23,6 +23,7 @@ void InstallerWorker::setDrive(const QString &drive) {
     selectedDrive = drive;
 }
 
+
 void InstallerWorker::run() {
     QProcess process;
     QString suffix = (selectedDrive.startsWith("nvme") || selectedDrive.startsWith("mmc")) ? "p" : "";
@@ -31,14 +32,13 @@ void InstallerWorker::run() {
 
     emit logMessage("🧙 Starting disk preparation in thread...");
 
-    // Unmount
+    // Unmount any existing mounts
     emit logMessage("Unmounting existing /mnt...");
     process.start("sudo", {"umount", "-l", "/mnt/*"});
     process.waitForFinished();
     process.start("sudo", {"umount", "-l", "/mnt"});
     process.waitForFinished();
-    process.start("/bin/bash", {"-c",
-                                QString("lsblk -nr -o MOUNTPOINT /dev/%1").arg(selectedDrive)});
+    process.start("/bin/bash", {"-c", QString("lsblk -nr -o MOUNTPOINT /dev/%1").arg(selectedDrive)});
     process.waitForFinished();
     QStringList mps = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
     for (const QString &mp : mps) {
@@ -52,7 +52,6 @@ void InstallerWorker::run() {
         return;
     }
 
-    // Partition the drive in one go to avoid kernel race conditions
     emit logMessage("Creating new partition table...");
     QStringList args{partedBin, QString("/dev/%1").arg(selectedDrive), "--script",
                      "mklabel", "msdos",
@@ -62,57 +61,9 @@ void InstallerWorker::run() {
     if (QProcess::execute("sudo", args) != 0) {
         emit errorOccurred("Partition command failed");
         return;
-
-    emit logMessage("Creating new partition table...");
-    QStringList args{partedBin, QString("/dev/%1").arg(selectedDrive), "--script",
-                     "mklabel", "msdos",
-                     "mkpart", "primary", "ext4", "1MiB", "513MiB",
-                     "set", "1", "boot", "on",
-                     "mkpart", "primary", "ext4", "513MiB", "100%"};
-    if (QProcess::execute("sudo", args) != 0) {
-        emit errorOccurred("Partition command failed");
-        return;
-
-    QString partedBin = QStandardPaths::findExecutable("parted");
-    if (partedBin.isEmpty()) {
-        emit errorOccurred("parted not found in PATH");
-        return;
     }
 
-    // Partition
-    emit logMessage("Creating new partition table...");
-    QStringList cmd1{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mklabel", "msdos"};
-    QStringList cmd2{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mkpart", "primary", "ext4", "1MiB", "513MiB"};
-    QStringList cmd3{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "set", "1", "boot", "on"};
-    QStringList cmd4{partedBin, QString("/dev/%1").arg(selectedDrive), "--script", "mkpart", "primary", "ext4", "513MiB", "100%"};
-
-    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4}) {
-        int ret = QProcess::execute("sudo", args);
-        if (ret != 0) {
-            emit errorOccurred("Partition command failed");
-
-
-    QStringList cmds = {
-        // Legacy BIOS layout: 512MiB boot partition + remainder root
-        QString("sudo %1 /dev/%2 --script mklabel msdos").arg(partedBin, selectedDrive),
-        QString("sudo %1 /dev/%2 --script mkpart primary ext4 1MiB 513MiB").arg(partedBin, selectedDrive),
-        QString("sudo %1 /dev/%2 --script set 1 boot on").arg(partedBin, selectedDrive),
-        QString("sudo %1 /dev/%2 --script mkpart primary ext4 513MiB 100%").arg(partedBin, selectedDrive)
-    };
-    for (const QString &cmd : cmds) {
-        process.start("/bin/bash", {"-c", cmd});
-        process.waitForFinished(-1);
-        QString stdOut = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
-        QString errOut = QString::fromUtf8(process.readAllStandardError()).trimmed();
-        if (!stdOut.isEmpty())
-            emit logMessage(stdOut);
-        if (process.exitCode() != 0) {
-            emit errorOccurred(QString("Partition error: %1\n%2").arg(cmd, errOut));
-            return;
-        }
-    }
-
-    // Refresh table
+    // Refresh table so the new partitions are visible
     emit logMessage("Refreshing partition table...");
     QProcess::execute("sudo", {"partprobe", QString("/dev/%1").arg(selectedDrive)});
     QProcess::execute("sudo", {"udevadm", "settle"});
@@ -130,14 +81,12 @@ void InstallerWorker::run() {
         return;
     }
 
-    // Mount
+    // Mount the newly created partitions
     emit logMessage("Mounting partitions...");
     process.start("sudo", {"mount", rootPart, "/mnt"});
     process.waitForFinished();
     process.start("sudo", {"mkdir", "-p", "/mnt/boot"});
     process.waitForFinished();
-
-
     process.start("sudo", {"mount", bootPart, "/mnt/boot"});
     process.waitForFinished();
 
