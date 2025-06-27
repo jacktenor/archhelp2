@@ -2,7 +2,6 @@
 #define INSTALLWIZARD_H
 
 #include <QWizard>
-#include <QNetworkAccessManager>
 #include <QProgressBar>
 #include <QStringList>
 
@@ -22,15 +21,12 @@ public:
 private:
     void installDependencies();
     Ui::Installwizard *ui;
-    QProgressBar *progressBar;
-    QNetworkAccessManager *networkManager;
     QString selectedDrive;  // 🧠 TRACK THE CURRENT DRIVE
     bool efiInstall = false; // track chosen boot mode
     QString getUserHome();
     void populateDrives(); // Populate the dropdown with available drives
     void downloadISO(QProgressBar *progressBar);
     void on_installButton_clicked();
-    void forceUnmount(const QString &mountPoint);
     void unmountDrive(const QString &drive);
     void appendLog(const QString &message);
     // Declare the methods that were missing
@@ -38,10 +34,6 @@ private:
     void prepareDrive(const QString &drive);   // Prepare the selected drive
     void populatePartitionTable(const QString &drive); // new
     void prepareForEfi(const QString &drive); // use free space for EFI
-    void mountPartitions(const QString &drive);
-    void mountISO();
-    void installArchBase(const QString &selectedDrive);
-    void installGrub(const QString &drive);
     void setWizardButtonEnabled(QWizard::WizardButton which, bool enabled);
 };
 
