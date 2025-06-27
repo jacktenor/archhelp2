@@ -50,6 +50,23 @@ void InstallerWorker::run() {
         int ret = QProcess::execute("sudo", args);
         if (ret != 0) {
             emit errorOccurred("Partition command failed");
+
+    QStringList cmds = {
+        // Legacy BIOS layout: 512MiB boot partition + remainder root
+        QString("sudo %1 /dev/%2 --script mklabel msdos").arg(partedBin, selectedDrive),
+        QString("sudo %1 /dev/%2 --script mkpart primary ext4 1MiB 513MiB").arg(partedBin, selectedDrive),
+        QString("sudo %1 /dev/%2 --script set 1 boot on").arg(partedBin, selectedDrive),
+        QString("sudo %1 /dev/%2 --script mkpart primary ext4 513MiB 100%").arg(partedBin, selectedDrive)
+    };
+    for (const QString &cmd : cmds) {
+        process.start("/bin/bash", {"-c", cmd});
+        process.waitForFinished(-1);
+        QString stdOut = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+        QString errOut = QString::fromUtf8(process.readAllStandardError()).trimmed();
+        if (!stdOut.isEmpty())
+            emit logMessage(stdOut);
+        if (process.exitCode() != 0) {
+            emit errorOccurred(QString("Partition error: %1\n%2").arg(cmd, errOut));
             return;
         }
     }
