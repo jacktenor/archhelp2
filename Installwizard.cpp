@@ -442,6 +442,19 @@ void Installwizard::prepareForEfi(const QString &drive) {
         return;
     }
 
+    // Create partitions similar to legacy routine but using GPT and FAT32 ESP
+    QStringList cmd1{partedBin, device, "--script", "mklabel", "gpt"};
+    QStringList cmd2{partedBin, device, "--script", "mkpart", "primary", "fat32", "1MiB", "513MiB"};
+    QStringList cmd3{partedBin, device, "--script", "name", "1", "ESP"};
+    QStringList cmd4{partedBin, device, "--script", "set", "1", "esp", "on"};
+    QStringList cmd5{partedBin, device, "--script", "mkpart", "primary", "ext4", "513MiB", "100%"};
+
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4, cmd5}) {
+        if (QProcess::execute("sudo", args) != 0) {
+
+        return;
+    }
+
     // Ensure the disk uses GPT so the ESP can be named
     QProcess p;
     p.start("lsblk", {"-no", "PTTYPE", device});

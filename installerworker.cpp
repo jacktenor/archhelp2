@@ -51,7 +51,6 @@ void InstallerWorker::run() {
         if (ret != 0) {
             emit errorOccurred("Partition command failed");
 
-
     QStringList cmds = {
         // Legacy BIOS layout: 512MiB boot partition + remainder root
         QString("sudo %1 /dev/%2 --script mklabel msdos").arg(partedBin, selectedDrive),
