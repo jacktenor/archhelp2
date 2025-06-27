@@ -452,6 +452,7 @@ void Installwizard::prepareForEfi(const QString &drive) {
     QString partedBin = locatePartedBinary();
     if (partedBin.isEmpty()) {
         QMessageBox::critical(this, "Partition Error", "parted not found");
+
         return;
     }
 
@@ -467,6 +468,135 @@ void Installwizard::prepareForEfi(const QString &drive) {
         QMessageBox::critical(this, "Partition Error",
                               tr("Failed to run parted."));
         return;
+    }
+
+    // Create partitions similar to legacy routine but using GPT and FAT32 ESP
+    QStringList cmd1{partedBin, device, "--script", "mklabel", "gpt"};
+    QStringList cmd2{partedBin, device, "--script", "mkpart", "primary", "fat32", "1MiB", "513MiB"};
+    QStringList cmd3{partedBin, device, "--script", "name", "1", "ESP"};
+    QStringList cmd4{partedBin, device, "--script", "set", "1", "esp", "on"};
+    QStringList cmd5{partedBin, device, "--script", "mkpart", "primary", "ext4", "513MiB", "100%"};
+
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4, cmd5}) {
+        if (QProcess::execute("sudo", args) != 0) {
+    QString partedBin = QStandardPaths::findExecutable("parted");
+    if (partedBin.isEmpty()) {
+        QMessageBox::critical(this, "Partition Error", "parted not found in PATH");
+        return;
+    }
+
+    // Create partitions similar to legacy routine but using GPT and FAT32 ESP
+    QStringList cmd1{partedBin, device, "--script", "mklabel", "gpt"};
+    QStringList cmd2{partedBin, device, "--script", "mkpart", "primary", "fat32", "1MiB", "513MiB"};
+    QStringList cmd3{partedBin, device, "--script", "name", "1", "ESP"};
+    QStringList cmd4{partedBin, device, "--script", "set", "1", "esp", "on"};
+    QStringList cmd5{partedBin, device, "--script", "mkpart", "primary", "ext4", "513MiB", "100%"};
+
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4, cmd5}) {
+        if (QProcess::execute("sudo", args) != 0) {
+
+        return;
+    }
+
+    // Ensure the disk uses GPT so the ESP can be named
+    QProcess p;
+    p.start("lsblk", {"-no", "PTTYPE", device});
+    p.waitForFinished();
+    QString type = QString(p.readAllStandardOutput()).trimmed();
+    if (type != "gpt") {
+        int ret = QProcess::execute("sudo", {partedBin, device, "--script", "mklabel", "gpt"});
+        if (ret != 0) {
+            QMessageBox::critical(this, "Partition Error", tr("Failed to create GPT label."));
+
+    if (type != "gpt") {
+        int ret = QProcess::execute("sudo", {partedBin, device, "--script", "mklabel", "gpt"});
+        if (ret != 0) {
+            QMessageBox::critical(this, "Partition Error", tr("Failed to create GPT label."));
+
+    process.start("lsblk", QStringList() << "-no" << "PTTYPE" << device);
+    process.waitForFinished();
+    QString type = QString(process.readAllStandardOutput()).trimmed();
+    if (type != "gpt") {
+        process.start("/bin/bash", QStringList()
+                                       << "-c"
+                                       << QString("sudo %1 %2 --script mklabel gpt")
+                                              .arg(partedBin, device));
+        process.waitForFinished();
+        if (process.exitCode() != 0) {
+            QMessageBox::critical(this, "Partition Error",
+                                  tr("Failed to create GPT label:\n%1")
+                                      .arg(QString(process.readAllStandardError())));
+
+            return;
+        }
+    }
+
+    // Determine next free region using parted
+    p.start(partedBin, {"-sm", device, "unit", "MiB", "print", "free"});
+    p.waitForFinished();
+    QString out = p.readAllStandardOutput();
+    process.start(partedBin, QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
+
+    process.start("parted", QStringList() << "-sm" << device << "unit" << "MiB" << "print" << "free");
+    process.waitForFinished();
+    QString out = process.readAllStandardOutput();
+
+
+    double freeStart = -1;
+    int maxPart = 0;
+    for (const QString &line : out.split('\n', Qt::SkipEmptyParts)) {
+        QString trimmed = line.trimmed();
+        QStringList cols = trimmed.split(':');
+        if (cols.size() < 2)
+            continue;
+
+        bool ok = false;
+        int num = cols[0].toInt(&ok);
+        if (ok && !trimmed.contains("free", Qt::CaseInsensitive))
+            maxPart = std::max(maxPart, num);
+
+        if (trimmed.contains("free", Qt::CaseInsensitive) && cols.size() >= 3) {
+            double start = cols[1].remove(QRegularExpression("[^0-9.]")).toDouble();
+            double end = cols[2].remove(QRegularExpression("[^0-9.]")).toDouble();
+            if (end - start > 1000) { // choose space >1GiB
+                freeStart = start;
+                break;
+            }
+        }
+    }
+
+    if (freeStart < 0) {
+        QMessageBox::critical(this, "Partition Error", "No suitable free space found.");
+        return;
+    }
+
+    double bootStart = freeStart + 1;  // align
+    double bootEnd = bootStart + 512;  // 512MiB ESP
+    double rootStart = bootEnd;
+
+    QStringList cmd1{partedBin, device, "--script", "mkpart", "primary", "fat32", QString("%1MiB").arg(bootStart), QString("%1MiB").arg(bootEnd)};
+    QStringList cmd2{partedBin, device, "--script", "name", QString::number(maxPart + 1), "ESP"};
+    QStringList cmd3{partedBin, device, "--script", "set", QString::number(maxPart + 1), "esp", "on"};
+    QStringList cmd4{partedBin, device, "--script", "mkpart", "primary", "ext4", QString("%1MiB").arg(rootStart), "100%"};
+
+    QStringList cmds = {
+        QString("sudo %1 %2 --script mkpart primary fat32 %3MiB %4MiB")
+            .arg(partedBin, device)
+            .arg(bootStart)
+            .arg(bootEnd),
+        QString("sudo %1 %2 --script name %3 ESP").arg(partedBin, device).arg(maxPart + 1),
+        QString("sudo %1 %2 --script set %3 esp on").arg(partedBin, device).arg(maxPart + 1),
+        QString("sudo %1 %2 --script mkpart primary ext4 %3MiB 100%")
+            .arg(partedBin, device)
+            .arg(rootStart)
+    };
+
+    for (const QStringList &args : {cmd1, cmd2, cmd3, cmd4}) {
+        int ret = QProcess::execute("sudo", args);
+        if (ret != 0) {
+            QMessageBox::critical(this, "Partition Error", tr("Failed to run parted."));
+            return;
+        }
     }
 
     QProcess::execute("sudo", {"partprobe", device});
