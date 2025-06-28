@@ -4,6 +4,7 @@
 #include <QWizard>
 #include <QProgressBar>
 #include <QStringList>
+#include "installerworker.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -23,6 +24,8 @@ private:
     Ui::Installwizard *ui;
     QString selectedDrive;  // 🧠 TRACK THE CURRENT DRIVE
     bool efiInstall = false; // track chosen boot mode
+    InstallerWorker::InstallMode installMode = InstallerWorker::InstallMode::WipeDrive;
+    QString selectedPartition;
     QString getUserHome();
     void populateDrives(); // Populate the dropdown with available drives
     void downloadISO(QProgressBar *progressBar);
@@ -32,6 +35,8 @@ private:
     // Declare the methods that were missing
     QStringList getAvailableDrives();        // Detect available drives
     void prepareDrive(const QString &drive);   // Prepare the selected drive
+    void prepareExistingPartition(const QString &partition);
+    void prepareFreeSpace(const QString &drive);
     void populatePartitionTable(const QString &drive); // new
     void prepareForEfi(const QString &drive); // use free space for EFI
     void setWizardButtonEnabled(QWizard::WizardButton which, bool enabled);

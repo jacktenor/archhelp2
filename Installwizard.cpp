@@ -14,6 +14,7 @@
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QThread>
+#include <QComboBox>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <algorithm>
@@ -32,31 +33,67 @@ Installwizard::Installwizard(QWidget *parent)
   connect(ui->partRefreshButton, &QPushButton::clicked, this,
           &Installwizard::populateDrives);
 
+  connect(ui->comboInstallMode, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            switch (idx) {
+            case 0:
+              installMode = InstallerWorker::InstallMode::WipeDrive;
+              break;
+            case 1:
+              installMode = InstallerWorker::InstallMode::UsePartition;
+              break;
+            case 2:
+              installMode = InstallerWorker::InstallMode::UseFreeSpace;
+              break;
+            }
+          });
+
+  connect(ui->treePartitions, &QTreeWidget::itemClicked, this,
+          [this](QTreeWidgetItem *item, int) {
+            if (item)
+              selectedPartition = item->text(0);
+          });
+
   // Connect prepareButton to handle drive preparation
   connect(ui->prepareButton, &QPushButton::clicked, this, [=]() {
-    QString selectedDrive = ui->driveDropdown->currentText();
-    if (selectedDrive.isEmpty() || selectedDrive == "No drives found") {
+    QString d = ui->driveDropdown->currentText();
+    if (d.isEmpty() || d == "No drives found") {
       QMessageBox::warning(this, "Error", "Please select a valid drive.");
       return;
     }
 
-    QMessageBox::StandardButton confirm = QMessageBox::question(
-        this, tr("Confirm Drive"),
-        tr("You are about to destroy all data on %1!!! Are you absolutely "
-           "sure this is correct?")
-            .arg(selectedDrive),
-        QMessageBox::Yes | QMessageBox::No);
+    QString msg;
+    if (installMode == InstallerWorker::InstallMode::WipeDrive)
+      msg = tr("You are about to destroy all data on %1!!! Are you absolutely sure this is correct?").arg(d);
+    else if (installMode == InstallerWorker::InstallMode::UsePartition)
+      msg = tr("Format partition %1 as root?").arg(selectedPartition);
+    else
+      msg = tr("Create a new partition in free space on %1?").arg(d);
 
+    QMessageBox::StandardButton confirm = QMessageBox::question(this, tr("Confirm"), msg, QMessageBox::Yes | QMessageBox::No);
     if (confirm != QMessageBox::Yes)
       return;
 
     efiInstall = false; // legacy mode
 
-    // Disable advance until drive prep is done
     setWizardButtonEnabled(QWizard::NextButton, true);
 
-    // Remove "/dev/" prefix for internal processing
-    prepareDrive(selectedDrive.mid(5));
+    QString drive = d.mid(5); // remove /dev/
+    switch (installMode) {
+    case InstallerWorker::InstallMode::WipeDrive:
+      prepareDrive(drive);
+      break;
+    case InstallerWorker::InstallMode::UsePartition:
+      if (selectedPartition.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please select a partition in the table.");
+        return;
+      }
+      prepareExistingPartition("/dev/" + selectedPartition);
+      break;
+    case InstallerWorker::InstallMode::UseFreeSpace:
+      prepareFreeSpace(drive);
+      break;
+    }
   });
 
   // Populate drives when the wizard starts
@@ -375,6 +412,7 @@ void Installwizard::prepareDrive(const QString &drive) {
 
   InstallerWorker *worker = new InstallerWorker;
   worker->setDrive(drive);
+  worker->setMode(InstallerWorker::InstallMode::WipeDrive);
 
   QThread *thread = new QThread;
   worker->moveToThread(thread);
@@ -395,6 +433,60 @@ void Installwizard::prepareDrive(const QString &drive) {
 
   connect(worker, &InstallerWorker::installComplete, worker,
           &QObject::deleteLater);
+  connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+
+  thread->start();
+}
+
+void Installwizard::prepareExistingPartition(const QString &partition) {
+  InstallerWorker *worker = new InstallerWorker;
+  worker->setDrive(selectedDrive);
+  worker->setMode(InstallerWorker::InstallMode::UsePartition);
+  worker->setTargetPartition(partition);
+
+  QThread *thread = new QThread;
+  worker->moveToThread(thread);
+
+  connect(thread, &QThread::started, worker, &InstallerWorker::run);
+  connect(worker, &InstallerWorker::logMessage, this,
+          [this](const QString &msg) { appendLog(msg); });
+  connect(worker, &InstallerWorker::errorOccurred, this,
+          [this](const QString &msg) {
+            QMessageBox::critical(this, "Error", msg);
+          });
+  connect(worker, &InstallerWorker::installComplete, thread, &QThread::quit);
+  connect(worker, &InstallerWorker::installComplete, this, [this]() {
+    appendLog("\xE2\x9C\x85 Partition prepared.");
+    setWizardButtonEnabled(QWizard::NextButton, true);
+  });
+  connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
+  connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+
+  thread->start();
+}
+
+void Installwizard::prepareFreeSpace(const QString &drive) {
+  selectedDrive = drive;
+  InstallerWorker *worker = new InstallerWorker;
+  worker->setDrive(drive);
+  worker->setMode(InstallerWorker::InstallMode::UseFreeSpace);
+
+  QThread *thread = new QThread;
+  worker->moveToThread(thread);
+
+  connect(thread, &QThread::started, worker, &InstallerWorker::run);
+  connect(worker, &InstallerWorker::logMessage, this,
+          [this](const QString &msg) { appendLog(msg); });
+  connect(worker, &InstallerWorker::errorOccurred, this,
+          [this](const QString &msg) {
+            QMessageBox::critical(this, "Error", msg);
+          });
+  connect(worker, &InstallerWorker::installComplete, thread, &QThread::quit);
+  connect(worker, &InstallerWorker::installComplete, this, [this]() {
+    appendLog("\xE2\x9C\x85 Free space partition created.");
+    setWizardButtonEnabled(QWizard::NextButton, true);
+  });
+  connect(worker, &InstallerWorker::installComplete, worker, &QObject::deleteLater);
   connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
   thread->start();

@@ -200,9 +200,9 @@
     <property name="styleSheet">
      <string notr="true">font: 600 12pt &quot;Noto Sans&quot;;</string>
     </property>
-    <property name="text">
-     <string>Select a drive for installation</string>
-    </property>
+   <property name="text">
+    <string>Select a drive for installation</string>
+   </property>
     <property name="alignment">
      <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
@@ -244,6 +244,44 @@
       <height>125</height>
      </rect>
     </property>
+   </widget>
+   <widget class="QLabel" name="labelInstallMode">
+    <property name="geometry">
+     <rect>
+      <x>32</x>
+      <y>164</y>
+      <width>160</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Installation Target</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboInstallMode">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>160</y>
+      <width>180</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>Erase entire drive</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Use selected partition</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Use free space</string>
+     </property>
+    </item>
    </widget>
   </widget>
   <widget class="QWizardPage" name="wizardPage_3">

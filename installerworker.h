@@ -9,6 +9,9 @@ class InstallerWorker : public QObject {
 public:
     explicit InstallerWorker(QObject *parent = nullptr);
     void setDrive(const QString &drive);
+    enum class InstallMode { WipeDrive, UsePartition, UseFreeSpace };
+    void setMode(InstallMode mode);
+    void setTargetPartition(const QString &partition);
 
 signals:
     void logMessage(const QString &message);
@@ -20,6 +23,8 @@ public slots:
 
 private:
     QString selectedDrive;
+    InstallMode mode = InstallMode::WipeDrive;
+    QString targetPartition; // used when mode == UsePartition
 };
 
 #endif // INSTALLERWORKER_H
