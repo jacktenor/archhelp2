@@ -144,9 +144,11 @@ Installwizard::Installwizard(QWidget *parent)
 
   connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
           [this](const QString &text) {
-            if (currentId() == 1 && !text.isEmpty() &&
-                text != "No drives found")
-              populatePartitionTable(text.mid(5));
+            if (!text.isEmpty() && text != "No drives found") {
+              selectedDrive = text.mid(5);
+              if (currentId() == 1)
+                populatePartitionTable(selectedDrive);
+            }
           });
 }
 
@@ -439,6 +441,14 @@ void Installwizard::prepareDrive(const QString &drive) {
 }
 
 void Installwizard::prepareExistingPartition(const QString &partition) {
+  // Derive the parent drive so grub-install knows where to install
+  QProcess proc;
+  proc.start("lsblk", QStringList() << "-nr" << "-o" << "PKNAME" << partition);
+  proc.waitForFinished();
+  QString parent = QString(proc.readAllStandardOutput()).trimmed();
+  if (!parent.isEmpty())
+    selectedDrive = parent;
+
   InstallerWorker *worker = new InstallerWorker;
   worker->setDrive(selectedDrive);
   worker->setMode(InstallerWorker::InstallMode::UsePartition);
@@ -521,6 +531,7 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 
 void Installwizard::prepareForEfi(const QString &drive) {
   efiInstall = true; // remember choice for grub
+  selectedDrive = drive;
   unmountDrive(drive);
 
   QString device = QString("/dev/%1").arg(drive);
