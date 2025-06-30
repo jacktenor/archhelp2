@@ -44,7 +44,14 @@ void InstallerWorker::run() {
     process.waitForFinished();
     process.start("sudo", {"umount", "-l", "/mnt"});
     process.waitForFinished();
-    process.start("/bin/bash", {"-c", QString("lsblk -nr -o MOUNTPOINT /dev/%1").arg(selectedDrive)});
+
+    QString queryTarget;
+    if (mode == InstallMode::UsePartition)
+        queryTarget = targetPartition;
+    else
+        queryTarget = QString("/dev/%1").arg(selectedDrive);
+
+    process.start("/bin/bash", {"-c", QString("lsblk -nr -o MOUNTPOINT %1").arg(queryTarget)});
     process.waitForFinished();
     QStringList mps = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
     for (const QString &mp : mps) {
