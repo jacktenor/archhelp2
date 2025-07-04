@@ -40,6 +40,7 @@ private:
     void splitPartitionForEfi(const QString &partition);
     void populatePartitionTable(const QString &drive); // new
     void prepareForEfi(const QString &drive); // use free space for EFI
+    void handleDriveChange(const QString &text);
     void setWizardButtonEnabled(QWizard::WizardButton which, bool enabled);
 };
 

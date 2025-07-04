@@ -159,6 +159,7 @@ Installwizard::Installwizard(QWidget *parent)
       splitPartitionForEfi(selectedPartition);
     } else {
       prepareForEfi(drive);
+
     if (!drive.isEmpty()) {
       setWizardButtonEnabled(QWizard::NextButton, false);
       if (installMode == InstallerWorker::InstallMode::UsePartition) {
@@ -176,6 +177,7 @@ Installwizard::Installwizard(QWidget *parent)
   });
 
   connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
+          &Installwizard::handleDriveChange);
           [this](const QString &text) {
             if (!text.isEmpty() && text != "No drives found") {
               selectedDrive = text.mid(5);
@@ -202,7 +204,11 @@ QString Installwizard::getUserHome() {
       QStringList fields = output.split(':');
       if (fields.size() >= 6)
         userHome = fields[5]; // Home directory from /etc/passwd
-    }
+    }/home/greg/gits/archhelp2/Installwizard.cpp:176: error: expected primary-expression before ‘)’ token
+../../Installwizard.cpp: In lambda function:
+../../Installwizard.cpp:176:4: error: expected primary-expression before ‘)’ token
+  176 |   });
+      |    ^
   }
 
   // Fallback
@@ -592,6 +598,14 @@ void Installwizard::prepareForEfi(const QString &drive) {
   populatePartitionTable(drive);
   appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
   setWizardButtonEnabled(QWizard::NextButton, true);
+}
+
+void Installwizard::handleDriveChange(const QString &text) {
+  if (!text.isEmpty() && text != "No drives found") {
+    selectedDrive = text.mid(5);
+    if (currentId() == 1)
+      populatePartitionTable(selectedDrive);
+  }
 }
 
 void Installwizard::splitPartitionForEfi(const QString &partition) {
