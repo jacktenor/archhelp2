@@ -135,7 +135,8 @@ Installwizard::Installwizard(QWidget *parent)
 
   connect(ui->partRefreshButton, &QPushButton::clicked, this, [this]() {
     QString drive = ui->driveDropdown->currentText().mid(5);
-    populatePartitionTable(drive);
+
+    populatePartitionTable(drive);      
   });
 
   connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
@@ -159,7 +160,7 @@ Installwizard::Installwizard(QWidget *parent)
       splitPartitionForEfi(selectedPartition);
     } else {
       prepareForEfi(drive);
-
+  };
     if (!drive.isEmpty()) {
       setWizardButtonEnabled(QWizard::NextButton, false);
       if (installMode == InstallerWorker::InstallMode::UsePartition) {
@@ -184,7 +185,7 @@ Installwizard::Installwizard(QWidget *parent)
               if (currentId() == 1)
                 populatePartitionTable(selectedDrive);
             }
-          });
+          };
 }
 
 QString Installwizard::getUserHome() {
@@ -204,11 +205,7 @@ QString Installwizard::getUserHome() {
       QStringList fields = output.split(':');
       if (fields.size() >= 6)
         userHome = fields[5]; // Home directory from /etc/passwd
-    }/home/greg/gits/archhelp2/Installwizard.cpp:176: error: expected primary-expression before ‘)’ token
-../../Installwizard.cpp: In lambda function:
-../../Installwizard.cpp:176:4: error: expected primary-expression before ‘)’ token
-  176 |   });
-      |    ^
+    }
   }
 
   // Fallback
