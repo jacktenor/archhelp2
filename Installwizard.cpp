@@ -62,6 +62,10 @@ Installwizard::Installwizard(QWidget *parent)
       return;
     }
 
+    // Re-read the chosen install mode so we always act on the UI state
+    installMode = static_cast<InstallerWorker::InstallMode>(
+        ui->comboInstallMode->currentIndex());
+
     QString msg;
     if (installMode == InstallerWorker::InstallMode::WipeDrive)
       msg = tr("You are about to destroy all data on %1!!! Are you absolutely sure this is correct?").arg(d);
@@ -136,6 +140,25 @@ Installwizard::Installwizard(QWidget *parent)
 
   connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
     QString drive = ui->driveDropdown->currentText().mid(5);
+    if (drive.isEmpty())
+      return;
+
+    // Ensure we react to the currently selected install mode even if
+    // the combo box signal did not fire for some reason
+    installMode = static_cast<InstallerWorker::InstallMode>(
+        ui->comboInstallMode->currentIndex());
+
+    setWizardButtonEnabled(QWizard::NextButton, false);
+    if (installMode == InstallerWorker::InstallMode::UsePartition) {
+      if (selectedPartition.isEmpty()) {
+        QMessageBox::warning(this, "Error",
+                             "Please select a partition in the table.");
+        setWizardButtonEnabled(QWizard::NextButton, true);
+        return;
+      }
+      splitPartitionForEfi(selectedPartition);
+    } else {
+      prepareForEfi(drive);
     if (!drive.isEmpty()) {
       setWizardButtonEnabled(QWizard::NextButton, false);
       if (installMode == InstallerWorker::InstallMode::UsePartition) {
