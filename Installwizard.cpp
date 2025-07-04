@@ -160,6 +160,7 @@ Installwizard::Installwizard(QWidget *parent)
       splitPartitionForEfi(selectedPartition);
     } else {
       prepareForEfi(drive);
+
   };
     if (!drive.isEmpty()) {
       setWizardButtonEnabled(QWizard::NextButton, false);
@@ -179,6 +180,7 @@ Installwizard::Installwizard(QWidget *parent)
 
   connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
           &Installwizard::handleDriveChange);
+
           [this](const QString &text) {
             if (!text.isEmpty() && text != "No drives found") {
               selectedDrive = text.mid(5);
@@ -624,6 +626,9 @@ void Installwizard::splitPartitionForEfi(const QString &partition) {
   int partNum = m.captured(2).toInt();
   selectedDrive = drive;
 
+  // Make sure nothing from the drive is mounted
+  unmountDrive(drive);
+
   QProcess proc;
   proc.start("lsblk",
              QStringList() << "-bnro" << "START,SIZE" << QString("/dev/%1").arg(part));
@@ -652,6 +657,22 @@ void Installwizard::splitPartitionForEfi(const QString &partition) {
   QString partedBin = locatePartedBinary();
   if (partedBin.isEmpty()) {
     QMessageBox::critical(this, "Partition Error", "parted not found");
+    return;
+  }
+
+  QString partPath = QString("/dev/%1").arg(part);
+  long long newSize = newEnd - startMiB;
+
+  // Shrink the filesystem before resizing the partition
+  if (QProcess::execute("sudo", {"e2fsck", "-f", partPath}) != 0) {
+    QMessageBox::critical(this, "Partition Error",
+                         "Filesystem check failed before resize.");
+    return;
+  }
+  if (QProcess::execute("sudo", {"resize2fs", partPath,
+                                  QString("%1M").arg(newSize)}) != 0) {
+    QMessageBox::critical(this, "Partition Error",
+                         "Failed to shrink filesystem.");
     return;
   }
 
