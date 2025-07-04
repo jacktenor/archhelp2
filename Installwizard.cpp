@@ -162,6 +162,7 @@ Installwizard::Installwizard(QWidget *parent)
       prepareForEfi(drive);
 
 
+
   };
     if (!drive.isEmpty()) {
       setWizardButtonEnabled(QWizard::NextButton, false);
@@ -181,6 +182,7 @@ Installwizard::Installwizard(QWidget *parent)
 
   connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
           &Installwizard::handleDriveChange);
+
 
           [this](const QString &text) {
             if (!text.isEmpty() && text != "No drives found") {
