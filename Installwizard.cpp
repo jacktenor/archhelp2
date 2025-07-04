@@ -159,6 +159,19 @@ Installwizard::Installwizard(QWidget *parent)
       splitPartitionForEfi(selectedPartition);
     } else {
       prepareForEfi(drive);
+    if (!drive.isEmpty()) {
+      setWizardButtonEnabled(QWizard::NextButton, false);
+      if (installMode == InstallerWorker::InstallMode::UsePartition) {
+        if (selectedPartition.isEmpty()) {
+          QMessageBox::warning(this, "Error",
+                               "Please select a partition in the table.");
+          setWizardButtonEnabled(QWizard::NextButton, true);
+          return;
+        }
+        splitPartitionForEfi(selectedPartition);
+      } else {
+        prepareForEfi(drive);
+      }
     }
   });
 
