@@ -135,7 +135,8 @@ Installwizard::Installwizard(QWidget *parent)
 
   connect(ui->partRefreshButton, &QPushButton::clicked, this, [this]() {
     QString drive = ui->driveDropdown->currentText().mid(5);
-    populatePartitionTable(drive);
+
+    populatePartitionTable(drive);      
   });
 
   connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
@@ -159,11 +160,37 @@ Installwizard::Installwizard(QWidget *parent)
       splitPartitionForEfi(selectedPartition);
     } else {
       prepareForEfi(drive);
+
+
+
+  };
+    if (!drive.isEmpty()) {
+      setWizardButtonEnabled(QWizard::NextButton, false);
+      if (installMode == InstallerWorker::InstallMode::UsePartition) {
+        if (selectedPartition.isEmpty()) {
+          QMessageBox::warning(this, "Error",
+                               "Please select a partition in the table.");
+          setWizardButtonEnabled(QWizard::NextButton, true);
+          return;
+        }
+        splitPartitionForEfi(selectedPartition);
+      } else {
+        prepareForEfi(drive);
+      }
     }
   });
 
   connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
           &Installwizard::handleDriveChange);
+
+
+          [this](const QString &text) {
+            if (!text.isEmpty() && text != "No drives found") {
+              selectedDrive = text.mid(5);
+              if (currentId() == 1)
+                populatePartitionTable(selectedDrive);
+            }
+          };
 }
 
 QString Installwizard::getUserHome() {
