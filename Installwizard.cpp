@@ -161,6 +161,7 @@ Installwizard::Installwizard(QWidget *parent)
     } else {
       prepareForEfi(drive);
 
+
   };
     if (!drive.isEmpty()) {
       setWizardButtonEnabled(QWizard::NextButton, false);
