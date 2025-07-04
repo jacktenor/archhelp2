@@ -44,7 +44,14 @@ void InstallerWorker::run() {
     process.waitForFinished();
     process.start("sudo", {"umount", "-l", "/mnt"});
     process.waitForFinished();
-    process.start("/bin/bash", {"-c", QString("lsblk -nr -o MOUNTPOINT /dev/%1").arg(selectedDrive)});
+
+    QString queryTarget;
+    if (mode == InstallMode::UsePartition)
+        queryTarget = targetPartition;
+    else
+        queryTarget = QString("/dev/%1").arg(selectedDrive);
+
+    process.start("/bin/bash", {"-c", QString("lsblk -nr -o MOUNTPOINT %1").arg(queryTarget)});
     process.waitForFinished();
     QStringList mps = QString(process.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
     for (const QString &mp : mps) {
@@ -52,13 +59,14 @@ void InstallerWorker::run() {
         process.waitForFinished();
     }
 
-    QString partedBin = locatePartedBinary();
-    if (partedBin.isEmpty()) {
-        emit errorOccurred("parted not found");
-        return;
-    }
+    QString partedBin;
 
     if (mode == InstallMode::WipeDrive) {
+        partedBin = locatePartedBinary();
+        if (partedBin.isEmpty()) {
+            emit errorOccurred("parted not found");
+            return;
+        }
         emit logMessage("Creating new partition table...");
         QStringList args{partedBin, QString("/dev/%1").arg(selectedDrive), "--script",
                          "mklabel", "msdos",
@@ -104,6 +112,11 @@ void InstallerWorker::run() {
         process.start("sudo", {"mount", rootPart, "/mnt"});
         process.waitForFinished();
     } else if (mode == InstallMode::UseFreeSpace) {
+        partedBin = locatePartedBinary();
+        if (partedBin.isEmpty()) {
+            emit errorOccurred("parted not found");
+            return;
+        }
         emit logMessage("Searching for free space...");
         process.start("sudo", {partedBin, QString("/dev/%1").arg(selectedDrive), "-m", "unit", "MiB", "print", "free"});
         process.waitForFinished();
