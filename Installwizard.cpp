@@ -62,6 +62,10 @@ Installwizard::Installwizard(QWidget *parent)
       return;
     }
 
+    // Re-read the chosen install mode so we always act on the UI state
+    installMode = static_cast<InstallerWorker::InstallMode>(
+        ui->comboInstallMode->currentIndex());
+
     QString msg;
     if (installMode == InstallerWorker::InstallMode::WipeDrive)
       msg = tr("You are about to destroy all data on %1!!! Are you absolutely sure this is correct?").arg(d);
@@ -136,18 +140,30 @@ Installwizard::Installwizard(QWidget *parent)
 
   connect(ui->createPartButton, &QPushButton::clicked, this, [this]() {
     QString drive = ui->driveDropdown->currentText().mid(5);
-    if (!drive.isEmpty()) {
-      setWizardButtonEnabled(QWizard::NextButton, false);
+    if (drive.isEmpty())
+      return;
+
+    // Ensure we react to the currently selected install mode even if
+    // the combo box signal did not fire for some reason
+    installMode = static_cast<InstallerWorker::InstallMode>(
+        ui->comboInstallMode->currentIndex());
+
+    setWizardButtonEnabled(QWizard::NextButton, false);
+    if (installMode == InstallerWorker::InstallMode::UsePartition) {
+      if (selectedPartition.isEmpty()) {
+        QMessageBox::warning(this, "Error",
+                             "Please select a partition in the table.");
+        setWizardButtonEnabled(QWizard::NextButton, true);
+        return;
+      }
+      splitPartitionForEfi(selectedPartition);
+    } else {
       prepareForEfi(drive);
     }
   });
 
   connect(ui->driveDropdown, &QComboBox::currentTextChanged, this,
-          [this](const QString &text) {
-            if (currentId() == 1 && !text.isEmpty() &&
-                text != "No drives found")
-              populatePartitionTable(text.mid(5));
-          });
+          &Installwizard::handleDriveChange);
 }
 
 QString Installwizard::getUserHome() {
@@ -439,6 +455,14 @@ void Installwizard::prepareDrive(const QString &drive) {
 }
 
 void Installwizard::prepareExistingPartition(const QString &partition) {
+  // Derive the parent drive so grub-install knows where to install
+  QProcess proc;
+  proc.start("lsblk", QStringList() << "-nr" << "-o" << "PKNAME" << partition);
+  proc.waitForFinished();
+  QString parent = QString(proc.readAllStandardOutput()).trimmed();
+  if (!parent.isEmpty())
+    selectedDrive = parent;
+
   InstallerWorker *worker = new InstallerWorker;
   worker->setDrive(selectedDrive);
   worker->setMode(InstallerWorker::InstallMode::UsePartition);
@@ -521,6 +545,7 @@ void Installwizard::populatePartitionTable(const QString &drive) {
 
 void Installwizard::prepareForEfi(const QString &drive) {
   efiInstall = true; // remember choice for grub
+  selectedDrive = drive;
   unmountDrive(drive);
 
   QString device = QString("/dev/%1").arg(drive);
@@ -547,6 +572,106 @@ void Installwizard::prepareForEfi(const QString &drive) {
 
   populatePartitionTable(drive);
   appendLog("\xE2\x9C\x85 Partitions ready for EFI install.");
+  setWizardButtonEnabled(QWizard::NextButton, true);
+}
+
+void Installwizard::handleDriveChange(const QString &text) {
+  if (!text.isEmpty() && text != "No drives found") {
+    selectedDrive = text.mid(5);
+    if (currentId() == 1)
+      populatePartitionTable(selectedDrive);
+  }
+}
+
+void Installwizard::splitPartitionForEfi(const QString &partition) {
+  efiInstall = true;
+
+  QString part = partition;
+  if (part.startsWith("/dev/"))
+    part = part.mid(5);
+
+  QRegularExpression rx("([a-zA-Z]+)(\\d+)$");
+  QRegularExpressionMatch m = rx.match(part);
+  if (!m.hasMatch()) {
+    QMessageBox::critical(this, "Partition Error",
+                         "Unable to determine partition number.");
+    return;
+  }
+
+  QString drive = m.captured(1);
+  int partNum = m.captured(2).toInt();
+  selectedDrive = drive;
+
+  QProcess proc;
+  proc.start("lsblk",
+             QStringList() << "-bnro" << "START,SIZE" << QString("/dev/%1").arg(part));
+  proc.waitForFinished();
+  QStringList vals = QString(proc.readAllStandardOutput())
+                          .split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+  if (vals.size() < 2) {
+    QMessageBox::critical(this, "Partition Error",
+                         "Could not query partition info.");
+    return;
+  }
+
+  long long startB = vals.at(0).toLongLong();
+  long long sizeB = vals.at(1).toLongLong();
+  long long startMiB = startB / (1024 * 1024);
+  long long endMiB = startMiB + sizeB / (1024 * 1024);
+
+  if (endMiB - startMiB <= 600) {
+    QMessageBox::warning(this, "Partition Error",
+                         "Partition too small to split for EFI.");
+    return;
+  }
+
+  long long newEnd = endMiB - 512; // leave 512MiB for ESP
+  QString device = QString("/dev/%1").arg(drive);
+  QString partedBin = locatePartedBinary();
+  if (partedBin.isEmpty()) {
+    QMessageBox::critical(this, "Partition Error", "parted not found");
+    return;
+  }
+
+  // Resize the existing partition
+  if (QProcess::execute("sudo",
+                        {partedBin, device, "--script", "resizepart",
+                         QString::number(partNum), QString("%1MiB").arg(newEnd)}) != 0) {
+    QMessageBox::critical(this, "Partition Error",
+                         "Failed to resize selected partition.");
+    return;
+  }
+
+  // Create the ESP in the freed space
+  if (QProcess::execute("sudo",
+                        {partedBin, device, "--script", "mkpart", "primary",
+                         "fat32", QString("%1MiB").arg(newEnd),
+                         QString("%1MiB").arg(endMiB)}) != 0) {
+    QMessageBox::critical(this, "Partition Error",
+                         "Failed to create EFI partition.");
+    return;
+  }
+
+  QProcess::execute("sudo", {"partprobe", device});
+  QProcess::execute("sudo", {"udevadm", "settle"});
+
+  // Determine new partition name (assume highest number)
+  proc.start("lsblk", QStringList() << "-nr" << "-o" << "NAME" << device);
+  proc.waitForFinished();
+  QStringList names = QString(proc.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
+  QString newPart = names.last();
+  QProcess::execute("sudo",
+                    {"mkfs.fat", "-F32", QString("/dev/%1").arg(newPart)});
+
+  QProcess::execute("sudo",
+                    {partedBin, device, "--script", "name",
+                     QString::number(partNum + 1), "ESP"});
+  QProcess::execute("sudo",
+                    {partedBin, device, "--script", "set",
+                     QString::number(partNum + 1), "esp", "on"});
+
+  populatePartitionTable(drive);
+  appendLog("\xE2\x9C\x85 Partition adjusted for EFI.");
   setWizardButtonEnabled(QWizard::NextButton, true);
 }
 

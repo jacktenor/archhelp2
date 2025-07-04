@@ -37,8 +37,10 @@ private:
     void prepareDrive(const QString &drive);   // Prepare the selected drive
     void prepareExistingPartition(const QString &partition);
     void prepareFreeSpace(const QString &drive);
+    void splitPartitionForEfi(const QString &partition);
     void populatePartitionTable(const QString &drive); // new
     void prepareForEfi(const QString &drive); // use free space for EFI
+    void handleDriveChange(const QString &text);
     void setWizardButtonEnabled(QWizard::WizardButton which, bool enabled);
 };
 
