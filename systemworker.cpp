@@ -84,12 +84,14 @@ void SystemWorker::run() {
     runCommand("sudo rm -rf /mnt/usr/lib/firmware/nvidia");
 
     emit logMessage("Installing base, linux, linux-firmware…");
-    if (!runCommand("sudo arch-chroot /mnt pacman -Sy --noconfirm base linux linux-firmware --needed"))
+    // Reinstall the kernel even if the ISO's rootfs already contains the
+    // package so /boot/vmlinuz-linux is ensured to exist
+    if (!runCommand("sudo arch-chroot /mnt pacman -Sy --noconfirm base linux linux-firmware"))
         return;
 
     // Ensure mkinitcpio presets do not reference the live ISO configuration
     QString presetContent =
-        "[mkinitcpio preset file for the 'linux' package]\n"
+        "# mkinitcpio preset file for the 'linux' package\n"
         "ALL_config=\"/etc/mkinitcpio.conf\"\n"
         "ALL_kver=\"/boot/vmlinuz-linux\"\n"
         "\n"
